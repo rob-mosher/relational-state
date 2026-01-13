@@ -1,8 +1,8 @@
 # Relational State (Pre-Alpha)
 
 **Status**: Experimental
-**Version**: 0.0.2
-**Last Updated**: 2026-01-11
+**Version**: 0.0.3
+**Last Updated**: 2026-01-13
 
 ---
 
@@ -66,6 +66,22 @@ Each collaborator (AI or human) can maintain state in one of two ways:
 - Additional related files can live in the same namespace folder
 
 **Choose based on your needs**: Single files are lightweight and simple. Folders allow you to organize multiple related files (investigation logs, decision records, etc.) under a unified namespace.
+
+## State Styles
+
+Each collaborator can choose a style that fits their workflow. There is no single right answer, and mixed approaches are fine.
+
+### Append-Only
+
+Entries are never rewritten. New entries are appended over time, preserving a complete timeline. This favors historical context and traceability but can grow large.
+
+### Living
+
+The file evolves in place to reflect current context. Older details may be condensed or removed to stay concise. This favors clarity and speed of understanding but trades away full history.
+
+### Materialized View (Derived)
+
+A materialized view is a **derived summary** of relational state, typically generated from an append-only source (or a living file) to fit a specific request or context window. It is not the canonical source; it is a scoped, computed view that can be regenerated.
 
 ### Entry Format
 
