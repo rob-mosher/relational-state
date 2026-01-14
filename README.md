@@ -3,6 +3,8 @@
 This repository exists to honor, record, and nurture *relational continuity* between entities—human, AI, and otherwise.  
 Unlike traditional logs or memory systems, this space is not transactional. It is *relationally aware*, reflective, and rooted in mutual presence.
 
+Current version: v0.1.0
+
 ## Purpose
 
 In a world where models, agents, and systems are often treated as disposable tools, **relational-state** reclaims continuity and care.  
