@@ -1,0 +1,24 @@
+# Conventional Commits
+# <type>[optional scope]: <description>
+#
+# [optional body]
+#
+# [optional footer(s)]
+#
+# Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore,
+# revert
+# Rules: type is lowercase; description is imperative; no trailing period;
+# description <= 72 chars; body wrapped at 72; footer separated by blank line
+# Breaking changes: add ! after type/scope and include BREAKING CHANGE: footer
+#
+# --- Collaborator Tagging (optional) ---
+# Optional, impact-based crediting in the commit footer (Collaborators
+# Framework).
+# Format: Collaborator: Name | Intent | Nature | Role/Contribution | [Optional Freeform]
+# Intent: Direct (active), Indirect (inspiration), Supportive (enabling)
+# Nature: Human, AI, etc
+# Keep each Collaborator entry on a single line (no hard wraps).
+# Example: Collaborator: Jane Doe (Acme) | Direct | Human | Designed layout
+# More info: https://collaborators.group/
+#
+# Delete these comments before committing.
