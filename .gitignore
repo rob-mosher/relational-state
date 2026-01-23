@@ -24,3 +24,9 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Relational State related
+.relational/stateless/*
+!./.relational/stateless/.gitkeep
+.relational/vector_store/*
+!.relational/vector_store/.gitkeep
