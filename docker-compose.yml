@@ -1,0 +1,84 @@
+services:
+  relational:
+    build:
+      context: .
+      target: development
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    container_name: relational-engine
+    image: relational-engine:dev
+
+    # Volume mounts
+    volumes:
+      # Source code (hot reloading) - read-only to prevent accidental modification
+      - ./src/relational_engine:/app/src/relational_engine:ro
+
+      # Persistent data (named volumes) - survives container restarts
+      - relational-state:/app/.relational/state
+      - relational-vector-store:/app/.relational/vector_store
+
+      # Tests (for running tests in container) - read-only
+      - ./tests:/app/tests:ro
+
+      # Mount pyproject.toml for package metadata
+      - ./pyproject.toml:/app/pyproject.toml:ro
+
+    # Environment variables
+    # Can be overridden via .env file or shell environment
+    environment:
+      - RELATIONAL_EMBEDDING_PROVIDER=${RELATIONAL_EMBEDDING_PROVIDER:-local}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+
+    # Logging configuration (native Docker logging with rotation)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"    # Rotate after 10MB
+        max-file: "3"      # Keep 3 rotated files (30MB total max)
+        labels: "service=relational-engine,environment=development"
+        tag: "{{.Name}}/{{.ID}}"
+
+    # Keep container running for exec commands
+    # Use: docker-compose exec relational relational <command>
+    command: tail -f /dev/null
+
+    # Resource limits (adjust based on your system)
+    # sentence-transformers model loading can use significant memory
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'      # Max 2 CPU cores
+          memory: 4G       # Max 4GB RAM
+        reservations:
+          cpus: '1.0'      # Reserve at least 1 core
+          memory: 2G       # Reserve at least 2GB
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Health check (optional - for monitoring)
+    healthcheck:
+      test: ["CMD", "python", "-c", "import relational_engine; print('healthy')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+# Named volumes for persistent storage
+# These survive container stops/restarts and must be explicitly deleted
+volumes:
+  relational-state:
+    driver: local
+    name: rm-relational-state_relational-state
+
+  relational-vector-store:
+    driver: local
+    name: rm-relational-state_relational-vector-store
+
+# Network configuration (optional - for future multi-container setups)
+networks:
+  default:
+    name: relational-network
+    driver: bridge

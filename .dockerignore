@@ -1,0 +1,104 @@
+# .dockerignore - Exclude files from Docker build context
+# Reduces build context size and speeds up builds
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+.pytest_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*~
+.project
+.pydevproject
+.settings/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+.gitmessage
+
+# Documentation (not needed in image, except README.md)
+docs/
+*.md
+!README.md
+!README-ENGINE.md
+
+# Tests (will be mounted separately if needed)
+tests/
+.pytest_cache/
+
+# Relational state directories (will be mounted as volumes)
+.relational/state/
+.relational/vector_store/
+.relational/stateless/
+
+# Docker files (no need to copy into image)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# OS-specific files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Other
+.claude/
+backups/

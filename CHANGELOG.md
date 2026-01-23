@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Relational State Engine implementation** - Complete working system with vector projections
+  - Canonical log reader: Parse markdown entries from `.relational/state/` with SHA-256 IDs
+  - Vector projection store: Dual embedding support (local Sentence-transformers + optional OpenAI)
+  - Context compiler (RLM Agent): Semantic search with promotion decay and recency reweighting
+  - Promotion logic: Damped recursion with sigmoid decay, depth limits, explicit PROMOTE decisions
+  - CLI interface: `init`, `load`, `query`, `promote`, `stats`, `demo` commands via Click framework
+  - Complete test suite: 45 tests passing (22 canonical log, 23 vector store)
+  - Comprehensive documentation: README-ENGINE.md with installation, usage, and troubleshooting
+- **Docker containerization** - Production-ready containerized deployment
+  - Multi-stage Dockerfile (development + production targets)
+  - docker-compose.yml with hot reloading, persistent volumes, and native logging
+  - Development container pattern: Keeps sentence-transformers model warm for fast iteration
+  - Named volumes for non-ephemeral storage (state + vector store)
+  - JSON file logging with automatic rotation (10MB max, 3 files)
+  - Resource limits to prevent memory runaway (2 CPU cores, 4GB RAM max)
+  - Health checks and restart policies
+  - Comprehensive Docker documentation: README-DOCKER.md with examples and troubleshooting
+- Core data models with Pydantic validation (Entry, ContextEnvelope, ContextEntry, Config)
+- Configuration system with environment variable support
+- Token counting using tiktoken for accurate Context Envelope sizing
+- Backup and restore strategies for Docker volumes
+- .dockerignore for optimized build contexts
+- Entrypoint script for container initialization
+
+### Changed
+
+- Updated requirements.txt with ChromaDB 1.4.1 (from 0.4.22) for Python 3.12 compatibility
+- Updated .gitignore with Python build artifacts (__pycache__, *.egg-info/, etc.)
+- pyproject.toml with modern Python packaging and CLI entry point
+
 ## [0.1.0] - 2026-01-13
 
 ### Added
