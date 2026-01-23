@@ -1,0 +1,2 @@
+[console_scripts]
+relational = relational_engine.cli:cli

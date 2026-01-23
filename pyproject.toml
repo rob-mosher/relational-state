@@ -1,0 +1,62 @@
+[project]
+name = "relational-engine"
+version = "0.1.0"
+description = "Relational State Engine - Entity-specific memory with vector projections"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Rob Mosher", email = "rob@robmosher.com" },
+]
+keywords = ["relational-state", "memory", "embeddings", "vector-store", "ai-collaboration"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "sentence-transformers>=2.3.1",
+    "chromadb>=0.4.22",
+    "click>=8.1.7",
+    "pydantic>=2.5.3",
+    "tiktoken>=0.5.2",
+    "python-dateutil>=2.8.2",
+]
+
+[project.optional-dependencies]
+openai = [
+    "openai>=1.12.0",
+]
+dev = [
+    "pytest>=7.4.3",
+    "pytest-cov>=4.1.0",
+    "black>=23.12.0",
+    "ruff>=0.1.9",
+]
+
+[project.scripts]
+relational = "relational_engine.cli:cli"
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-v --tb=short"
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = ["E", "F", "I", "N", "W"]
+ignore = ["E501"]  # Line too long (handled by black)
