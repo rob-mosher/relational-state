@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-01-24
+
 ### Changed - Major Conceptual Refactor
 
 **Relational Engine → Relational Domain** - A fundamental shift from hardcoded execution engine to sovereign domain with provider abstraction.
@@ -125,5 +127,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Balance entry guidance: recommend anchor, not too poetic, not too log-based
 - Enhance directory structure guidance and add state file examples
 
-[0.2.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.2.0
-[0.1.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.1.0
+[0.3.0]: https://github.com/rob-mosher/relational-domain/releases/tag/v0.3.0
+[0.2.0]: https://github.com/rob-mosher/relational-domain/releases/tag/v0.2.0 # was .../relational-state/...
+[0.1.0]: https://github.com/rob-mosher/relational-domain/releases/tag/v0.1.0 # was .../relational-state/...
