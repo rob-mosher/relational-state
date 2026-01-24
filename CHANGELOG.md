@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **MIT License** - Added MIT License to the project
+
 ### Fixed
 
 - **Post-release Config → DomainConfig fixes** - Resolved remaining type hints and function calls that still referenced the old `Config` class name
