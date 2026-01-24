@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **MCP Memory Inspection Tools** - 5 new MCP endpoints for memory exploration and visualization
+  - `list_memories`: Paginated memory listing with filters (entity, type, promotion depth range, date range)
+  - `read_memory`: Get full entry by ID with 404 handling for missing entries
+  - `filter_memories`: Advanced filtering with keywords (OR logic) and semantic search via embeddings
+  - `get_vector_stats`: Vector store statistics with optional breakdowns by author, type, and promotion depth
+  - `export_embeddings`: Export 384-dimensional embedding vectors with metadata for external visualization (UMAP/t-SNE/PCA)
+  - Comprehensive visualization guide with Python/JavaScript examples (docs/VISUALIZATION.md)
+  - Enhanced vector store inspection script with grouping and statistics (scripts/inspect_vector_store.py)
+
 ## [0.2.0] - 2026-01-23
 
 ### Added

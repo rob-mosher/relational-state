@@ -39,6 +39,11 @@ External MCP Client (e.g., Claude Desktop)
 http://localhost:8000/mcp/tools/compile_context
 http://localhost:8000/mcp/tools/append_memory
 http://localhost:8000/mcp/tools/evaluate_promotion
+http://localhost:8000/mcp/tools/list_memories
+http://localhost:8000/mcp/tools/read_memory
+http://localhost:8000/mcp/tools/filter_memories
+http://localhost:8000/mcp/tools/get_vector_stats
+http://localhost:8000/mcp/tools/export_embeddings
 ```
 
 ## Quick Start
@@ -146,6 +151,231 @@ Evaluate if an inference should be promoted.
   "suggested_depth": 1
 }
 ```
+
+### 4. `list_memories`
+
+List and paginate through memory entries with filters.
+
+**Endpoint**: `POST /mcp/tools/list_memories`
+
+**Request**:
+```json
+{
+  "entity_id": "rob-mosher",
+  "memory_type": "reflection",
+  "promotion_depth_min": 0,
+  "promotion_depth_max": 2,
+  "date_from": "2026-01-01T00:00:00",
+  "date_to": "2026-01-31T23:59:59",
+  "limit": 50,
+  "offset": 0
+}
+```
+
+**Response**:
+```json
+{
+  "entries": [
+    {
+      "id": "a7f3b2c1...",
+      "timestamp": "2026-01-20T10:30:00",
+      "author": "rob-mosher",
+      "type": "reflection",
+      "promotion_depth": 0,
+      "trust_weight": 1.0,
+      "content_preview": "## 2026-01-20: Reflections on TDD..."
+    }
+  ],
+  "total_count": 147,
+  "offset": 0,
+  "limit": 50,
+  "filters_applied": {
+    "entity_id": "rob-mosher",
+    "memory_type": "reflection",
+    "promotion_depth_min": 0,
+    "promotion_depth_max": 2,
+    "date_from": "2026-01-01T00:00:00",
+    "date_to": "2026-01-31T23:59:59"
+  }
+}
+```
+
+### 5. `read_memory`
+
+Read full memory entry by ID.
+
+**Endpoint**: `POST /mcp/tools/read_memory`
+
+**Request**:
+```json
+{
+  "entry_id": "a7f3b2c1d4e5f6..."
+}
+```
+
+**Response**:
+```json
+{
+  "id": "a7f3b2c1...",
+  "timestamp": "2026-01-20T10:30:00",
+  "author": "rob-mosher",
+  "type": "reflection",
+  "content": "## 2026-01-20: Full content here...",
+  "promotion_depth": 0,
+  "trust_weight": 1.0,
+  "metadata": {}
+}
+```
+
+### 6. `filter_memories`
+
+Advanced filtering with semantic search and keywords.
+
+**Endpoint**: `POST /mcp/tools/filter_memories`
+
+**Request**:
+```json
+{
+  "keywords": ["TDD", "testing"],
+  "author": "rob-mosher",
+  "semantic_query": "How did we approach testing?",
+  "limit": 25
+}
+```
+
+**Response**:
+```json
+{
+  "entries": [...],
+  "total_count": 15,
+  "search_metadata": {
+    "semantic_query_used": true,
+    "keywords_used": ["TDD", "testing"],
+    "author_filter": "rob-mosher",
+    "metadata_filters": null
+  }
+}
+```
+
+### 7. `get_vector_stats`
+
+Get vector store statistics and breakdowns.
+
+**Endpoint**: `POST /mcp/tools/get_vector_stats`
+
+**Request**:
+```json
+{
+  "include_breakdown": true
+}
+```
+
+**Response**:
+```json
+{
+  "total_entries": 347,
+  "authors": ["rob-mosher", "claude-sonnet-4.5"],
+  "embedding_provider": "local",
+  "embedding_model": "all-MiniLM-L6-v2",
+  "embedding_dim": 384,
+  "breakdown": {
+    "by_author": {
+      "rob-mosher": 120,
+      "claude-sonnet-4.5": 227
+    },
+    "by_type": {
+      "event": 200,
+      "reflection": 100,
+      "promotion": 47
+    },
+    "by_promotion_depth": {
+      "0": 300,
+      "1": 40,
+      "2": 7
+    }
+  }
+}
+```
+
+### 8. `export_embeddings`
+
+Export embeddings for external visualization.
+
+**Endpoint**: `POST /mcp/tools/export_embeddings`
+
+**Request**:
+```json
+{
+  "entity_id": "rob-mosher",
+  "max_entries": 1000,
+  "include_metadata": true
+}
+```
+
+**Response**:
+```json
+{
+  "embeddings": [
+    {
+      "id": "a7f3b2c1...",
+      "embedding": [0.123, -0.456, 0.789, ...],
+      "author": "rob-mosher",
+      "type": "reflection",
+      "timestamp": "2026-01-20T10:30:00",
+      "promotion_depth": 0,
+      "content_preview": "..."
+    }
+  ],
+  "total_exported": 120,
+  "embedding_dim": 384,
+  "export_timestamp": "2026-01-23T15:00:00",
+  "notes": "Exported 120 embeddings with dimension 384. Use UMAP, t-SNE, or PCA..."
+}
+```
+
+## Visualization
+
+Use Python to visualize exported embeddings:
+
+```python
+import json
+import umap
+import matplotlib.pyplot as plt
+
+# Export embeddings via MCP
+# (use curl command from above to create embeddings.json)
+
+# Load exported embeddings
+with open('embeddings.json') as f:
+    data = json.load(f)
+
+# Extract embedding vectors and metadata
+embeddings = [e['embedding'] for e in data['embeddings']]
+authors = [e['author'] for e in data['embeddings']]
+types = [e['type'] for e in data['embeddings']]
+
+# Reduce to 2D using UMAP
+reducer = umap.UMAP(n_components=2, random_state=42)
+coords_2d = reducer.fit_transform(embeddings)
+
+# Plot by type
+plt.figure(figsize=(12, 8))
+for mem_type in set(types):
+    mask = [t == mem_type for t in types]
+    plt.scatter(
+        coords_2d[mask, 0],
+        coords_2d[mask, 1],
+        label=mem_type,
+        alpha=0.6
+    )
+plt.legend()
+plt.title('Memory Embeddings Visualization (UMAP 2D)')
+plt.xlabel('UMAP Dimension 1')
+plt.ylabel('UMAP Dimension 2')
+plt.savefig('memory_embeddings.png', dpi=300)
+```
+
+See [docs/VISUALIZATION.md](docs/VISUALIZATION.md) for more visualization examples.
 
 ## Development Workflow
 
