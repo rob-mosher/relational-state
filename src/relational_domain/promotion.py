@@ -200,7 +200,7 @@ def promote_and_append(
         )
 
 
-def check_promotion_eligibility(entry: Entry, config: Optional[Config] = None) -> dict:
+def check_promotion_eligibility(entry: Entry, config: Optional[DomainConfig] = None) -> dict:
     """
     Check if an entry is eligible for promotion (without actually promoting)
 
@@ -216,7 +216,7 @@ def check_promotion_eligibility(entry: Entry, config: Optional[Config] = None) -
             - current_depth: int
             - max_depth: int
     """
-    config = config or Config.from_env()
+    config = config or DomainConfig.from_env()
 
     new_depth = entry.promotion_depth + 1
     probability = sigmoid_decay(new_depth, k=config.decay_k)

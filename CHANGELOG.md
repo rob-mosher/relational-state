@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Post-release Config → DomainConfig fixes** - Resolved remaining type hints and function calls that still referenced the old `Config` class name
+  - `context_compiler.py` `__init__`: Updated type hint from `Optional[Config]` to `Optional[DomainConfig]`
+  - `promotion.py` `check_promotion_eligibility`: Updated type hint from `Optional[Config]` to `Optional[DomainConfig]`
+  - These fixes resolve `NameError: name 'Config' is not defined` that occurred during Docker container startup
+
 ## [0.3.0] - 2026-01-24
 
 ### Changed - Major Conceptual Refactor

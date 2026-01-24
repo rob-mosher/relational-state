@@ -93,16 +93,16 @@ class ContextCompiler:
         - Generate Context Envelope
     """
 
-    def __init__(self, vector_store: VectorStore, config: Optional[Config] = None):
+    def __init__(self, vector_store: VectorStore, config: Optional[DomainConfig] = None):
         """
         Initialize context compiler
 
         Args:
             vector_store: VectorStore instance for querying
-            config: Configuration (defaults to Config.from_env())
+            config: Configuration (defaults to DomainConfig.from_env())
         """
         self.vector_store = vector_store
-        self.config = config or Config.from_env()
+        self.config = config or DomainConfig.from_env()
 
     def compile_context(
         self,
