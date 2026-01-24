@@ -1,5 +1,5 @@
 #!/bin/bash
-# Entrypoint script for Relational State Engine container
+# Entrypoint script for Relational Domain container
 # Handles initialization and environment setup
 
 set -e  # Exit on error
@@ -10,7 +10,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}Starting Relational State Engine...${NC}"
+echo -e "${GREEN}Starting Relational Domain...${NC}"
 
 # Ensure relational state directories exist
 if [ ! -d "/app/.relational/state" ]; then
@@ -24,16 +24,16 @@ if [ ! -d "/app/.relational/vector_store" ]; then
 fi
 
 # Check if package is installed
-if ! python -c "import relational_engine" 2>/dev/null; then
-  echo -e "${RED}ERROR: relational_engine package not installed${NC}"
+if ! python -c "import relational_domain" 2>/dev/null; then
+  echo -e "${RED}ERROR: relational_domain package not installed${NC}"
   echo -e "${YELLOW}Installing package in editable mode...${NC}"
   pip install -e /app
 fi
 
 # Auto-initialize if requested (via environment variable)
 if [ "${AUTO_INIT:-false}" = "true" ]; then
-  echo -e "${GREEN}Auto-initializing relational engine...${NC}"
-  if relational init; then
+  echo -e "${GREEN}Auto-initializing relational domain...${NC}"
+  if relational-domain init; then
     echo -e "${GREEN}✓ Initialization complete${NC}"
   else
     echo -e "${YELLOW}⚠ Initialization failed (may already be initialized)${NC}"

@@ -167,3 +167,44 @@ class ExportEmbeddingsResponse(BaseModel):
     embedding_dim: int
     export_timestamp: datetime = Field(default_factory=datetime.now)
     notes: str = Field(..., description="Usage notes for visualization")
+
+
+# Domain Introspection Tools (v0.3.0)
+
+class DescribeDomainRequest(BaseModel):
+    """Request model for describe_domain introspection tool."""
+    include_provider_status: bool = Field(default=True, description="Include current provider availability")
+
+
+class ProviderInfo(BaseModel):
+    """Provider information for describe_domain response."""
+    name: str
+    type: str
+    available: bool
+    capabilities: List[str]
+    requires_credentials: bool
+    embedding_dimensions: Optional[int] = None
+
+
+class DescribeDomainResponse(BaseModel):
+    """Response model for describe_domain introspection tool."""
+    domain_version: str
+    sovereignty_policies: Dict[str, Any]
+    available_operations: List[str]
+    providers: List[ProviderInfo]
+    provider_preference_order: List[str]
+    strict_entity_filtering: bool
+    max_context_tokens: int
+    max_promotion_depth: int
+
+
+class ListProvidersRequest(BaseModel):
+    """Request model for list_providers introspection tool."""
+    capability_filter: Optional[str] = Field(default=None, description="Filter by capability (embed, summarize, etc.)")
+
+
+class ListProvidersResponse(BaseModel):
+    """Response model for list_providers introspection tool."""
+    providers: List[ProviderInfo]
+    fallback_chain: List[str]
+    entity_affinities: Dict[str, str]

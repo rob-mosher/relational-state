@@ -10,8 +10,8 @@ from pathlib import Path
 import tempfile
 import shutil
 
-from relational_engine.vector_store import VectorStore
-from relational_engine.models import Config, Entry
+from relational_domain.vector_store import VectorStore
+from relational_domain.models import DomainConfig, Entry
 
 
 @pytest.fixture

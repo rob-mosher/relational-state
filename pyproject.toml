@@ -1,13 +1,13 @@
 [project]
-name = "relational-engine"
-version = "0.2.0"
-description = "Relational State Engine - Entity-specific memory with vector projections"
+name = "relational-domain"
+version = "0.3.0"
+description = "Relational Domain - Sovereign entity-specific memory with provider abstraction"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
     { name = "Rob Mosher", email = "rob@robmosher.com" },
 ]
-keywords = ["relational-state", "memory", "embeddings", "vector-store", "ai-collaboration"]
+keywords = ["relational-state", "memory", "embeddings", "vector-store", "ai-collaboration", "domain", "sovereignty"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -39,7 +39,7 @@ dev = [
 ]
 
 [project.scripts]
-relational = "relational_engine.cli:cli"
+relational-domain = "relational_domain.cli:cli"
 
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]

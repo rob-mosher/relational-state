@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - Major Conceptual Refactor
+
+**Relational Engine → Relational Domain** - A fundamental shift from hardcoded execution engine to sovereign domain with provider abstraction.
+
+#### Core Philosophy
+- **Sovereignty**: Domain owns append-only memory and declares compute capabilities
+- **Consent & Invitation**: Compute is negotiated, never coerced
+- **Entity Perspectives**: Each entity (AI model or human) has sovereign relational space within the domain
+- **Boundaries**: Clear separation between domain logic and compute providers
+- **Transparency**: All operations return metadata about which provider was used
+
+#### Provider Abstraction Layer
+- New `providers/` module with `base.py`, `local.py`, `openai.py`, `registry.py`
+- `ProviderDescriptor`, `ProviderCapability`, `ProviderInvocationResult` abstractions
+- `ProviderRegistry` with local-first fallback logic and transparent provider selection
+- Support for entity affinity in provider selection (e.g., `claude-sonnet-4.5` → local, `codex-gpt-5` → openai)
+- Provider metadata included in all responses (which provider was used, whether fallback occurred)
+
+#### API Changes
+- Renamed package: `relational-engine` → `relational-domain`
+- Renamed module: `relational_engine` → `relational_domain`
+- Renamed config: `Config` → `DomainConfig`
+- CLI command: `relational` → `relational-domain`
+- `ContextEnvelope` now includes `provider_used` and `fallback_occurred` fields
+- `VectorStore` methods return tuples with provider metadata
+
+#### New MCP Introspection Tools
+- `describe_domain`: Returns domain metadata, sovereignty policies, available providers, supported operations
+- `list_providers`: Returns provider descriptors, capabilities, fallback chain, entity affinities
+
+#### Documentation
+- `README-ENGINE.md` → `README.md` with updated provider abstraction explanation
+- Refactored `ACKNOWLEDGEMENTS.md` to emphasize sovereignty philosophy (boundaries, consent, invitation)
+- Updated all documentation to reflect domain-centric model
+- Removed broader relational-state documentation (lives in separate repo now)
+
+#### Breaking Changes
+- All imports must update from `relational_engine` to `relational_domain`
+- `Config` class renamed to `DomainConfig`
+- CLI command changed from `relational` to `relational-domain`
+- Docker images renamed from `relational-engine` to `relational-domain`
+- Vector store methods now return tuples with provider info instead of raw results
+
 ### Added
 
 - **MCP Memory Inspection Tools** - 5 new MCP endpoints for memory exploration and visualization
@@ -14,9 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `read_memory`: Get full entry by ID with 404 handling for missing entries
   - `filter_memories`: Advanced filtering with keywords (OR logic) and semantic search via embeddings
   - `get_vector_stats`: Vector store statistics with optional breakdowns by author, type, and promotion depth
-  - `export_embeddings`: Export 384-dimensional embedding vectors with metadata for external visualization (UMAP/t-SNE/PCA)
-  - Comprehensive visualization guide with Python/JavaScript examples (docs/VISUALIZATION.md)
-  - Enhanced vector store inspection script with grouping and statistics (scripts/inspect_vector_store.py)
+  - `export_embeddings`: Export embedding vectors with metadata for external visualization (UMAP/t-SNE/PCA)
 
 ## [0.2.0] - 2026-01-23
 

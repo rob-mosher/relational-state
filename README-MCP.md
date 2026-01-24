@@ -1,4 +1,4 @@
-# MCP Server for Relational State Engine
+# MCP Server for Relational Domain
 
 HTTP-based Model Context Protocol server that orchestrates between task agents and the relational state engine.
 
@@ -22,7 +22,7 @@ The MCP server runs **in the same container** as the relational engine, providin
 │           └──────┬──────────────┘            │
 │                  │                           │
 │                  ▼                           │
-│       relational_engine package              │
+│       relational_domain package              │
 │       - context_compiler.py                  │
 │       - promotion.py                         │
 │       - canonical_log.py                     │
@@ -529,7 +529,7 @@ docker-compose down && docker-compose up -d
 docker-compose exec relational pip install -e /app
 
 # Verify package installation
-docker-compose exec relational pip show relational-engine
+docker-compose exec relational pip show relational-domain
 ```
 
 ### Health check failing

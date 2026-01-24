@@ -8,7 +8,7 @@ import pytest
 from datetime import datetime
 from pathlib import Path
 
-from relational_engine.canonical_log import (
+from relational_domain.canonical_log import (
     normalize_content,
     generate_entry_id,
     classify_entry_type,
@@ -18,7 +18,7 @@ from relational_engine.canonical_log import (
     load_canonical_log,
     format_entry_for_append,
 )
-from relational_engine.models import Entry
+from relational_domain.models import Entry
 
 
 class TestNormalizeContent:

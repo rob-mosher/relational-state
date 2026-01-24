@@ -1,6 +1,6 @@
-# Docker Setup for Relational State Engine
+# Docker Setup for Relational Domain
 
-Containerized deployment of the Relational State Engine with hot reloading, persistent storage, and native Docker logging.
+Containerized deployment of the Relational Domain with hot reloading, persistent storage, and native Docker logging.
 
 ## Quick Start
 
@@ -38,7 +38,7 @@ docker-compose logs -f relational
 
 ### Source Code (Hot Reloading)
 ```yaml
-./src/relational_engine:/app/src/relational_engine:ro
+./src/relational_domain:/app/src/relational_domain:ro
 ```
 - **Read-only** mount prevents accidental modification
 - Package installed with `pip install -e .` for editable mode
@@ -115,7 +115,7 @@ docker-compose exec relational relational demo
 docker-compose up -d
 
 # 2. Make changes to source code
-# Edit src/relational_engine/cli.py in your editor
+# Edit src/relational_domain/cli.py in your editor
 
 # 3. Test changes immediately (hot reloading)
 docker-compose exec relational relational query -t "test" -e rob-mosher
@@ -141,7 +141,7 @@ docker-compose exec relational pytest tests/test_vector_store.py -v
 
 # With coverage
 docker-compose exec relational pytest tests/ \
-  --cov=relational_engine \
+  --cov=relational_domain \
   --cov-report=html
 
 # View coverage report (generated in container)
@@ -251,7 +251,7 @@ docker-compose logs --since 2026-01-23T10:00:00 relational
 docker-compose logs --since 1h relational
 
 # Using docker logs directly
-docker logs -f relational-engine
+docker logs -f relational-domain
 ```
 
 ### Log Configuration
@@ -263,7 +263,7 @@ logging:
   options:
     max-size: "10m"    # Rotate after 10MB
     max-file: "3"      # Keep 3 files (30MB total)
-    labels: "service=relational-engine"
+    labels: "service=relational-domain"
 ```
 
 ### Log Location
@@ -282,14 +282,14 @@ docker ps --format '{{.ID}} {{.Names}}'
 
 ### How It Works
 
-1. **Source code mounted as volume**: `./src/relational_engine:/app/src/relational_engine:ro`
+1. **Source code mounted as volume**: `./src/relational_domain:/app/src/relational_domain:ro`
 2. **Package installed in editable mode**: `pip install -e .` in Dockerfile
 3. **Python imports from mounted directory**: Changes reflected immediately
 4. **No rebuild required**: Edit `.py` files and run commands
 
 ### What Triggers Hot Reload
 
-- ✅ Edit any `.py` file in `src/relational_engine/`
+- ✅ Edit any `.py` file in `src/relational_domain/`
 - ✅ Next `docker-compose exec` command uses updated code
 - ✅ Model stays loaded in memory (fast iteration)
 
@@ -308,7 +308,7 @@ docker-compose up -d
 # 2. Run initial command
 docker-compose exec relational relational stats
 
-# 3. Edit src/relational_engine/cli.py
+# 3. Edit src/relational_domain/cli.py
 # Add a print statement to the stats command
 
 # 4. Run command again (should see your change)
@@ -344,7 +344,7 @@ docker-compose down && docker-compose up -d
 
 ```bash
 # Real-time stats
-docker stats relational-engine
+docker stats relational-domain
 
 # All containers
 docker stats
@@ -357,7 +357,7 @@ docker stats --no-stream
 
 ```bash
 # Build production image
-docker build --target production -t relational-engine:prod .
+docker build --target production -t relational-domain:prod .
 
 # Run production container
 docker run -d \
@@ -365,7 +365,7 @@ docker run -d \
   -v relational-state:/app/.relational/state \
   -v relational-vector-store:/app/.relational/vector_store \
   -e RELATIONAL_EMBEDDING_PROVIDER=local \
-  relational-engine:prod
+  relational-domain:prod
 
 # Or use docker-compose with production override
 docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
@@ -425,10 +425,10 @@ docker-compose down && docker-compose up -d
 
 ```bash
 # Verify volume mount
-docker-compose exec relational ls -la /app/src/relational_engine
+docker-compose exec relational ls -la /app/src/relational_domain
 
 # Check if package is in editable mode
-docker-compose exec relational pip show -f relational-engine
+docker-compose exec relational pip show -f relational-domain
 
 # Reinstall in editable mode
 docker-compose exec relational pip install -e /app
@@ -439,7 +439,7 @@ docker-compose exec relational pip install -e /app
 ```bash
 # Nuclear option: remove everything and start fresh
 docker-compose down -v
-docker rmi relational-engine:dev
+docker rmi relational-domain:dev
 docker volume rm rm-relational-state_relational-state rm-relational-state_relational-vector-store
 docker-compose up -d --build
 ```
@@ -456,7 +456,7 @@ docker-compose exec relational python
 docker-compose exec relational bash
 
 # Run specific Python script
-docker-compose exec relational python -c "from relational_engine import *; print('Hello')"
+docker-compose exec relational python -c "from relational_domain import *; print('Hello')"
 ```
 
 ### Custom Docker Compose Files

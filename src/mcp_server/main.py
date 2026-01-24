@@ -1,7 +1,7 @@
 """FastAPI application for MCP Server.
 
 This module implements an HTTP/SSE-based Model Context Protocol server that
-orchestrates between task agents and the relational state engine.
+orchestrates between task agents and the relational domain.
 """
 from fastapi import FastAPI, HTTPException
 import uvicorn
@@ -22,6 +22,10 @@ from .models import (
     GetVectorStatsResponse,
     ExportEmbeddingsRequest,
     ExportEmbeddingsResponse,
+    DescribeDomainRequest,
+    DescribeDomainResponse,
+    ListProvidersRequest,
+    ListProvidersResponse,
 )
 from .tools import (
     compile_context_tool,
@@ -32,12 +36,14 @@ from .tools import (
     filter_memories_tool,
     get_vector_stats_tool,
     export_embeddings_tool,
+    describe_domain,
+    list_providers,
 )
 
 app = FastAPI(
-    title="Relational State MCP Server",
-    description="Model Context Protocol orchestration layer for Relational State Engine",
-    version="0.2.0",
+    title="Relational Domain MCP Server",
+    description="Model Context Protocol orchestration layer for Relational Domain",
+    version="0.3.0",
 )
 
 
@@ -165,6 +171,32 @@ def export_embeddings(request: ExportEmbeddingsRequest):
     """
     try:
         return export_embeddings_tool(request)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/mcp/tools/describe_domain", response_model=DescribeDomainResponse)
+def describe_domain_endpoint(request: DescribeDomainRequest):
+    """MCP Tool: Describe domain capabilities and sovereignty policies.
+
+    Introspection tool that returns domain metadata, available providers,
+    supported operations, and sovereignty policies.
+    """
+    try:
+        return describe_domain(request)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/mcp/tools/list_providers", response_model=ListProvidersResponse)
+def list_providers_endpoint(request: ListProvidersRequest):
+    """MCP Tool: List available compute providers.
+
+    Returns provider descriptors with capabilities, availability status,
+    fallback chain, and entity affinities.
+    """
+    try:
+        return list_providers(request)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

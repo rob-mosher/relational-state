@@ -1,15 +1,15 @@
-"""MCP tool implementations that wrap relational engine functions."""
+"""MCP tool implementations that wrap relational domain functions."""
 from datetime import datetime
 from typing import Dict
-from relational_engine.context_compiler import ContextCompiler
-from relational_engine.vector_store import VectorStore
-from relational_engine.promotion import evaluate_promotion
-from relational_engine.canonical_log import (
+from relational_domain.context_compiler import ContextCompiler
+from relational_domain.vector_store import VectorStore
+from relational_domain.promotion import evaluate_promotion
+from relational_domain.canonical_log import (
     append_entry_to_log,
     generate_entry_id,
     load_canonical_log,
 )
-from relational_engine.models import Entry, Config
+from relational_domain.models import Entry, DomainConfig
 from .models import (
     CompileContextRequest,
     CompileContextResponse,
@@ -40,7 +40,7 @@ def compile_context_tool(request: CompileContextRequest) -> CompileContextRespon
     and applying weighting/decay rules.
     """
     # Initialize vector store and context compiler
-    config = Config.from_env()
+    config = DomainConfig.from_env()
     vector_store = VectorStore(config=config)
     compiler = ContextCompiler(vector_store=vector_store, config=config)
 
@@ -126,7 +126,7 @@ def evaluate_promotion_tool(request: EvaluatePromotionRequest) -> EvaluatePromot
         metadata={},
     )
 
-    config = Config.from_env()
+    config = DomainConfig.from_env()
     decision = evaluate_promotion(entry=entry, reason="MCP evaluation request", config=config)
 
     return EvaluatePromotionResponse(
@@ -230,7 +230,7 @@ def read_memory_tool(request: ReadMemoryRequest) -> ReadMemoryResponse:
     Retrieves complete entry including full content and metadata.
     Raises ValueError if entry ID not found.
     """
-    config = Config.from_env()
+    config = DomainConfig.from_env()
     vector_store = VectorStore(config=config)
 
     # Query ChromaDB for specific ID
@@ -268,7 +268,7 @@ def filter_memories_tool(request: FilterMemoriesRequest) -> FilterMemoriesRespon
     - Semantic search via embeddings
     - Custom metadata filters
     """
-    config = Config.from_env()
+    config = DomainConfig.from_env()
 
     # Use semantic search if query provided
     if request.semantic_query:
@@ -355,7 +355,7 @@ def get_vector_stats_tool(request: GetVectorStatsRequest) -> GetVectorStatsRespo
     - Embedding provider/model info
     - Optional: Breakdown by author, type, promotion depth
     """
-    config = Config.from_env()
+    config = DomainConfig.from_env()
     vector_store = VectorStore(config=config)
 
     # Get base stats
@@ -409,7 +409,7 @@ def export_embeddings_tool(request: ExportEmbeddingsRequest) -> ExportEmbeddings
     - JavaScript (D3.js, Observable)
     - BI tools (Tableau, etc.)
     """
-    config = Config.from_env()
+    config = DomainConfig.from_env()
     vector_store = VectorStore(config=config)
 
     # Build query filters
@@ -454,7 +454,7 @@ def export_embeddings_tool(request: ExportEmbeddingsRequest) -> ExportEmbeddings
         )
 
     notes = (
-        f"Exported {len(embedding_data)} embeddings with dimension {vector_store.embedding_dim}. "
+        f"Exported {len(embedding_data)} embeddings with dimension {vector_store.provider_registry.get_statistics()['providers'].get(config.default_embedding_provider, {}).get('embedding_dimensions', 'unknown')}. "
         "Use UMAP, t-SNE, or PCA for dimensionality reduction to 2D/3D. "
         "Example (Python): "
         "import umap; reducer = umap.UMAP(n_components=2); "
@@ -464,6 +464,123 @@ def export_embeddings_tool(request: ExportEmbeddingsRequest) -> ExportEmbeddings
     return ExportEmbeddingsResponse(
         embeddings=embedding_data,
         total_exported=len(embedding_data),
-        embedding_dim=vector_store.embedding_dim,
+        embedding_dim=vector_store.provider_registry.get_statistics()['providers'].get(config.default_embedding_provider, {}).get('embedding_dimensions', 0),
         notes=notes,
+    )
+
+
+# ==========================================
+# Domain Introspection Tools (v0.3.0)
+# ==========================================
+
+def describe_domain(request: "DescribeDomainRequest") -> "DescribeDomainResponse":
+    """
+    Describe the relational domain: sovereignty policies, providers, and capabilities.
+    
+    This introspection tool allows agents to understand what the domain supports
+    before making requests.
+    """
+    from .models import DescribeDomainResponse, ProviderInfo
+    from relational_domain.providers import ProviderCapability
+    
+    config = DomainConfig.from_env()
+    vector_store = VectorStore(config)
+    
+    # Get provider information
+    provider_infos = []
+    for provider in vector_store.provider_registry.list_providers():
+        descriptor = provider.get_descriptor()
+        provider_infos.append(
+            ProviderInfo(
+                name=descriptor.name,
+                type=descriptor.provider_type.value,
+                available=provider.is_available() if request.include_provider_status else True,
+                capabilities=[c.value for c in descriptor.capabilities],
+                requires_credentials=descriptor.requires_credentials,
+                embedding_dimensions=descriptor.embedding_dimensions
+            )
+        )
+    
+    # Define sovereignty policies
+    sovereignty_policies = {
+        "entity_sovereignty": "Each entity (AI model or human) has sovereign memory within this domain",
+        "strict_entity_filtering": config.strict_entity_filtering,
+        "consent_and_invitation": "Compute is negotiated, never coerced",
+        "provider_transparency": "All operations return metadata about which provider was used",
+        "local_first": "Prefers local compute with transparent fallback to external providers",
+        "append_only": "Memory is append-only; no deletions (except full reset)",
+        "damped_promotion": "Recursive promotion with exponential decay to prevent runaway memory",
+    }
+    
+    # Define available operations
+    available_operations = [
+        "compile_context",
+        "append_memory",
+        "evaluate_promotion",
+        "list_memories",
+        "read_memory",
+        "filter_memories",
+        "get_vector_stats",
+        "export_embeddings",
+        "describe_domain",
+        "list_providers",
+    ]
+    
+    return DescribeDomainResponse(
+        domain_version="0.3.0",
+        sovereignty_policies=sovereignty_policies,
+        available_operations=available_operations,
+        providers=provider_infos,
+        provider_preference_order=vector_store.provider_registry.preferences.default_order,
+        strict_entity_filtering=config.strict_entity_filtering,
+        max_context_tokens=config.max_context_tokens,
+        max_promotion_depth=config.max_promotion_depth,
+    )
+
+
+def list_providers(request: "ListProvidersRequest") -> "ListProvidersResponse":
+    """
+    List available compute providers and their capabilities.
+    
+    Shows which providers are available, their fallback order, and any entity affinities.
+    """
+    from .models import ListProvidersResponse, ProviderInfo
+    from relational_domain.providers import ProviderCapability
+    
+    config = DomainConfig.from_env()
+    vector_store = VectorStore(config)
+    
+    # Get provider information
+    provider_infos = []
+    all_providers = vector_store.provider_registry.list_providers()
+    
+    # Filter by capability if requested
+    if request.capability_filter:
+        try:
+            capability = ProviderCapability(request.capability_filter)
+            all_providers = [
+                p for p in all_providers
+                if capability in p.get_descriptor().capabilities
+            ]
+        except ValueError:
+            # Invalid capability filter, return all
+            pass
+    
+    for provider in all_providers:
+        descriptor = provider.get_descriptor()
+        provider_infos.append(
+            ProviderInfo(
+                name=descriptor.name,
+                type=descriptor.provider_type.value,
+                available=provider.is_available(),
+                capabilities=[c.value for c in descriptor.capabilities],
+                requires_credentials=descriptor.requires_credentials,
+                embedding_dimensions=descriptor.embedding_dimensions
+            )
+        )
+    
+    return ListProvidersResponse(
+        providers=provider_infos,
+        fallback_chain=vector_store.provider_registry.preferences.default_order,
+        entity_affinities=vector_store.provider_registry.preferences.entity_affinity,
     )
