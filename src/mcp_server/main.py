@@ -22,7 +22,7 @@ from .tools import (
 app = FastAPI(
     title="Relational State MCP Server",
     description="Model Context Protocol orchestration layer for Relational State Engine",
-    version="0.1.0",
+    version="0.2.0",
 )
 
 
