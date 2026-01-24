@@ -14,9 +14,11 @@ WORKDIR /app
 # Install system dependencies required for sentence-transformers and ChromaDB
 # - build-essential: Compiler tools for Python packages with C extensions
 # - git: Required by some Python packages during installation
+# - curl: Required for Docker healthcheck
 RUN apt-get update && apt-get install -y \
     build-essential \
     git \
+    curl \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -46,14 +48,20 @@ RUN pip install -e .
 # These will typically be mounted as volumes in docker-compose
 RUN mkdir -p /app/.relational/state /app/.relational/vector_store
 
+# Copy and set permissions for startup script
+COPY docker/start-mcp.sh /app/docker/start-mcp.sh
+RUN chmod +x /app/docker/start-mcp.sh
+
 # Set environment defaults
 ENV RELATIONAL_EMBEDDING_PROVIDER=local \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
-# Keep container running for exec commands
-# This allows: docker-compose exec relational relational <command>
-CMD ["tail", "-f", "/dev/null"]
+# Expose MCP server port
+EXPOSE 8000
+
+# Start MCP server (FastAPI with hot reloading)
+CMD ["/app/docker/start-mcp.sh"]
 
 # ============================================================================
 # Stage 3: Production image (optimized for deployment)
@@ -76,6 +84,3 @@ ENV RELATIONAL_EMBEDDING_PROVIDER=local \
 
 # Production command (can be overridden in docker-compose or docker run)
 CMD ["relational", "demo"]
-
-# Expose port for future MCP server integration
-EXPOSE 8000

@@ -32,6 +32,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Backup and restore strategies for Docker volumes
 - .dockerignore for optimized build contexts
 - Entrypoint script for container initialization
+- **MCP Server integration** - HTTP-based Model Context Protocol orchestration layer
+  - Single-container architecture: MCP server runs alongside CLI in same container
+  - FastAPI application with 3 MCP tools: `compile_context`, `append_memory`, `evaluate_promotion`
+  - Stateless orchestration layer that wraps existing relational engine functions
+  - HTTP/SSE transport for MCP client connectivity (port 8000 exposed)
+  - Hot reloading for MCP server code via Uvicorn `--reload`
+  - Direct in-process access to relational engine (no network overhead)
+  - Health check endpoint for monitoring
+  - FastAPI automatic OpenAPI docs (Swagger UI + ReDoc)
+  - Comprehensive MCP documentation: README-MCP.md with API examples and troubleshooting
+  - MCP server startup script: `docker/start-mcp.sh` for container initialization
+  - CLI still accessible via `docker-compose exec` while MCP server runs
 
 ### Changed
 
