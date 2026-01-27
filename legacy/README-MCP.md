@@ -50,14 +50,14 @@ http://localhost:8000/mcp/tools/export_embeddings
 
 ```bash
 # Start the container (MCP server starts automatically)
-docker-compose up -d
+./legacy/docker/compose.sh up -d
 
 # Check MCP server health
 curl http://localhost:8000/health
 
 # Initialize engine (first time only)
-docker-compose exec relational relational init
-docker-compose exec relational relational load
+./legacy/docker/compose.sh exec relational relational init
+./legacy/docker/compose.sh exec relational relational load
 
 # Test compile_context tool
 curl -X POST http://localhost:8000/mcp/tools/compile_context \
@@ -69,6 +69,8 @@ curl -X POST http://localhost:8000/mcp/tools/compile_context \
     "target_token_budget": 4000
   }'
 ```
+
+Compose configuration now lives at `legacy/docker/compose.yml`. The `./legacy/docker/compose.sh` wrapper keeps paths resolved from the repo root.
 
 ## MCP Tools
 
@@ -384,11 +386,11 @@ See [docs/VISUALIZATION.md](docs/VISUALIZATION.md) for more visualization exampl
 The MCP server supports **automatic hot reloading**:
 
 ```bash
-# Edit any file in src/mcp_server/
+# Edit any file in legacy/src/mcp_server/
 # Uvicorn automatically reloads within 1-2 seconds
 
 # Watch logs for reload confirmation
-docker-compose logs -f
+./legacy/docker/compose.sh logs -f
 
 # Test changes immediately
 curl http://localhost:8000/health
@@ -400,22 +402,22 @@ While the MCP server is running, you can still access the CLI:
 
 ```bash
 # Any relational CLI command
-docker-compose exec relational relational --help
-docker-compose exec relational relational query -t "Test" -e rob-mosher
-docker-compose exec relational pytest tests/ -v
+./legacy/docker/compose.sh exec relational relational --help
+./legacy/docker/compose.sh exec relational relational query -t "Test" -e rob-mosher
+./legacy/docker/compose.sh exec relational pytest tests/ -v
 ```
 
 ### Viewing Logs
 
 ```bash
 # Container logs (includes MCP server output)
-docker-compose logs -f
+./legacy/docker/compose.sh logs -f
 
 # Follow specific service
-docker-compose logs -f relational
+./legacy/docker/compose.sh logs -f relational
 
 # Last 100 lines
-docker-compose logs --tail=100
+./legacy/docker/compose.sh logs --tail=100
 ```
 
 ## API Documentation
@@ -473,8 +475,8 @@ curl -X POST http://localhost:8000/mcp/tools/evaluate_promotion \
 
 ```bash
 # 1. Initialize engine
-docker-compose exec relational relational init
-docker-compose exec relational relational load
+./legacy/docker/compose.sh exec relational relational init
+./legacy/docker/compose.sh exec relational relational load
 
 # 2. Compile context
 curl -X POST http://localhost:8000/mcp/tools/compile_context \
@@ -487,7 +489,7 @@ curl -X POST http://localhost:8000/mcp/tools/append_memory \
   -d '{"entity_id": "test-user", "content": "E2E test complete", "memory_type": "event"}' | jq '.success'
 
 # 4. Reload engine to pick up new entry
-docker-compose exec relational relational load
+./legacy/docker/compose.sh exec relational relational load
 
 # 5. Verify new entry is included in context
 curl -X POST http://localhost:8000/mcp/tools/compile_context \
@@ -501,35 +503,35 @@ curl -X POST http://localhost:8000/mcp/tools/compile_context \
 
 ```bash
 # Check logs
-docker-compose logs relational
+./legacy/docker/compose.sh logs relational
 
 # Verify container is running
-docker-compose ps
+./legacy/docker/compose.sh ps
 
 # Rebuild container
-docker-compose build
-docker-compose up -d
+./legacy/docker/compose.sh build
+./legacy/docker/compose.sh up -d
 ```
 
 ### Port 8000 already in use
 
 ```bash
-# Change port in docker-compose.yml
+# Change port in legacy/docker/compose.yml
 ports:
   - "8001:8000"  # Map to different host port
 
 # Restart
-docker-compose down && docker-compose up -d
+./legacy/docker/compose.sh down && ./legacy/docker/compose.sh up -d
 ```
 
 ### Import errors
 
 ```bash
-# Reinstall packages in container
-docker-compose exec relational pip install -e /app
+# Rebuild the image if dependencies changed
+./legacy/docker/compose.sh build --no-cache
 
-# Verify package installation
-docker-compose exec relational pip show relational-domain
+# Verify imports resolve correctly
+./legacy/docker/compose.sh exec relational python -c "import relational_domain as r; print(r.__file__)"
 ```
 
 ### Health check failing
@@ -538,10 +540,10 @@ The health check uses `curl` to check the `/health` endpoint. If it fails:
 
 ```bash
 # Check if MCP server is running
-docker-compose logs relational | grep "Uvicorn running"
+./legacy/docker/compose.sh logs relational | grep "Uvicorn running"
 
 # Manual health check
-docker-compose exec relational curl http://localhost:8000/health
+./legacy/docker/compose.sh exec relational curl http://localhost:8000/health
 ```
 
 ## MCP Protocol Constraints
@@ -564,7 +566,7 @@ The sentence-transformers model (~500MB) is loaded once when the container start
 After appending a memory via `append_memory`, you need to reload the vector store to include the new entry in context compilation:
 
 ```bash
-docker-compose exec relational relational load
+./legacy/docker/compose.sh exec relational relational load
 ```
 
 Future enhancement: Automatic background reprojection after append operations.

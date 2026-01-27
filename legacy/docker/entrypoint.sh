@@ -33,7 +33,7 @@ fi
 # Auto-initialize if requested (via environment variable)
 if [ "${AUTO_INIT:-false}" = "true" ]; then
   echo -e "${GREEN}Auto-initializing relational domain...${NC}"
-  if relational-domain init; then
+  if relational init; then
     echo -e "${GREEN}✓ Initialization complete${NC}"
   else
     echo -e "${YELLOW}⚠ Initialization failed (may already be initialized)${NC}"
@@ -55,7 +55,7 @@ echo "  - Python version: $(python --version)"
 echo "  - relational CLI: $(which relational || echo 'not in PATH')"
 
 echo -e "${GREEN}Container ready!${NC}"
-echo -e "${YELLOW}Run commands with:${NC} docker-compose exec relational relational <command>"
+echo -e "${YELLOW}Run commands with:${NC} ./legacy/docker/compose.sh exec relational relational <command>"
 echo ""
 
 # Execute the provided command (or CMD from Dockerfile)

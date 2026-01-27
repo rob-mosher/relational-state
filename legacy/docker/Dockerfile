@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean
 
 # Copy dependency files
-COPY requirements.txt pyproject.toml ./
+COPY legacy/docker/requirements.txt ./requirements.txt
 
 # Install Python dependencies
 # --no-cache-dir: Don't cache pip downloads (reduces image size)
@@ -37,23 +37,27 @@ RUN pip install --no-cache-dir --upgrade pip && \
 FROM base AS development
 
 # Copy source code
-# This will be overridden by volume mount in docker-compose for hot reloading
-COPY src/ /app/src/
+# This will be overridden by volume mount in Docker Compose for hot reloading
+COPY legacy/src/ /app/src/
 
-# Install package in editable mode for development
-# Changes to mounted source code will be immediately reflected
-RUN pip install -e .
+# Provide a stable CLI without packaging metadata
+RUN printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  'exec python -m relational_domain.cli "$@"' \
+  > /usr/local/bin/relational && chmod +x /usr/local/bin/relational
 
 # Create directories for relational state
-# These will typically be mounted as volumes in docker-compose
+# These will typically be mounted as volumes in Docker Compose
 RUN mkdir -p /app/.relational/state /app/.relational/vector_store
 
 # Copy and set permissions for startup script
-COPY docker/start-mcp.sh /app/docker/start-mcp.sh
+COPY legacy/docker/start-mcp.sh /app/docker/start-mcp.sh
 RUN chmod +x /app/docker/start-mcp.sh
 
 # Set environment defaults
-ENV RELATIONAL_EMBEDDING_PROVIDER=local \
+ENV PYTHONPATH=/app/src \
+    RELATIONAL_EMBEDDING_PROVIDER=local \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
@@ -69,18 +73,23 @@ CMD ["/app/docker/start-mcp.sh"]
 FROM base AS production
 
 # Copy source code
-COPY src/ /app/src/
+COPY legacy/src/ /app/src/
 
-# Install package in non-editable mode
-RUN pip install .
+# Provide a stable CLI without packaging metadata
+RUN printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  'exec python -m relational_domain.cli "$@"' \
+  > /usr/local/bin/relational && chmod +x /usr/local/bin/relational
 
 # Create directories for relational state
 RUN mkdir -p /app/.relational/state /app/.relational/vector_store
 
 # Set environment defaults
-ENV RELATIONAL_EMBEDDING_PROVIDER=local \
+ENV PYTHONPATH=/app/src \
+    RELATIONAL_EMBEDDING_PROVIDER=local \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
-# Production command (can be overridden in docker-compose or docker run)
+# Production command (can be overridden in Docker Compose or docker run)
 CMD ["relational", "demo"]

@@ -54,7 +54,7 @@ docs/
 !README-ENGINE.md
 
 # Tests (will be mounted separately if needed)
-tests/
+legacy/docker/tests/
 .pytest_cache/
 
 # Relational state directories (will be mounted as volumes)
@@ -66,6 +66,10 @@ tests/
 Dockerfile*
 docker-compose*.yml
 .dockerignore
+!legacy/docker/Dockerfile
+!legacy/docker/start-mcp.sh
+!legacy/docker/requirements.txt
+!legacy/src/
 
 # OS-specific files
 .DS_Store

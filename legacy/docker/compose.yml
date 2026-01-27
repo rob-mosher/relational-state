@@ -2,6 +2,7 @@ services:
   relational:
     build:
       context: .
+      dockerfile: legacy/docker/Dockerfile
       target: development
       args:
         - BUILDKIT_INLINE_CACHE=1
@@ -11,18 +12,15 @@ services:
     # Volume mounts
     volumes:
       # Source code (hot reloading) - read-only to prevent accidental modification
-      - ./src/relational_domain:/app/src/relational_domain:ro
-      - ./src/mcp_server:/app/src/mcp_server:ro
+      - ./legacy/src/relational_domain:/app/src/relational_domain:ro
+      - ./legacy/src/mcp_server:/app/src/mcp_server:ro
 
       # Persistent data (named volumes) - survives container restarts
       - relational-state:/app/.relational/state
       - relational-vector-store:/app/.relational/vector_store
 
       # Tests (for running tests in container) - read-only
-      - ./tests:/app/tests:ro
-
-      # Mount pyproject.toml for package metadata
-      - ./pyproject.toml:/app/pyproject.toml:ro
+      - ./legacy/docker/tests:/app/tests:ro
 
     # Expose MCP server port
     ports:

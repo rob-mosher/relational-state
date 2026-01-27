@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **MIT License** - Added MIT License to the project
 
+### Changed
+
+- **Legacy containment for Docker-centric setup** - Moved the existing Docker workflow under `legacy/docker/` to make room for upcoming `infra/` work
+- **Source tree relocation** - Moved `src/` to `legacy/src/` and updated Docker mounts/build context accordingly
+- **Tooling + docs relocation** - Moved `README.md`, `requirements.txt`, and `pytest.ini` under `legacy/docker/`
+- **Docker build/run adjustments** - Dockerfile now installs a simple `relational` wrapper and uses `PYTHONPATH` instead of packaging metadata
+- **Test discovery configuration** - Pytest now runs via `legacy/docker/pytest.ini` with `pythonpath = ../../legacy/src`
+
 ### Fixed
 
 - **Post-release Config → DomainConfig fixes** - Resolved remaining type hints and function calls that still referenced the old `Config` class name

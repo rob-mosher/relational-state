@@ -6,22 +6,24 @@ Containerized deployment of the Relational Domain with hot reloading, persistent
 
 ```bash
 # Build and start the container
-docker-compose up -d --build
+./legacy/docker/compose.sh up -d --build
 
 # Initialize the vector store (first time only)
-docker-compose exec relational relational init
+./legacy/docker/compose.sh exec relational relational init
 
 # Load entries from canonical log
-docker-compose exec relational relational load
+./legacy/docker/compose.sh exec relational relational load
 
 # Run a query
-docker-compose exec relational relational query \
+./legacy/docker/compose.sh exec relational relational query \
   --task "Reflect on collaborative work" \
   --entity rob-mosher
 
 # View logs
-docker-compose logs -f relational
+./legacy/docker/compose.sh logs -f relational
 ```
+
+Compose configuration now lives at `legacy/docker/compose.yml`. The `./legacy/docker/compose.sh` wrapper keeps paths resolved from the repo root.
 
 ## Architecture
 
@@ -38,10 +40,10 @@ docker-compose logs -f relational
 
 ### Source Code (Hot Reloading)
 ```yaml
-./src/relational_domain:/app/src/relational_domain:ro
+./legacy/src/relational_domain:/app/src/relational_domain:ro
 ```
 - **Read-only** mount prevents accidental modification
-- Package installed with `pip install -e .` for editable mode
+- `PYTHONPATH=/app/src` and a `relational` wrapper provide CLI access
 - Changes to `.py` files immediately available on next command
 
 ### Persistent Data (Named Volumes)
@@ -50,7 +52,7 @@ relational-state:/app/.relational/state
 relational-vector-store:/app/.relational/vector_store
 ```
 - **Named volumes** persist across container restarts
-- Only deleted with `docker-compose down -v` or explicit `docker volume rm`
+- Only deleted with `./legacy/docker/compose.sh down -v` or explicit `docker volume rm`
 - Can be backed up and restored
 
 ### Tests (Read-Only)
@@ -58,7 +60,7 @@ relational-vector-store:/app/.relational/vector_store
 ./tests:/app/tests:ro
 ```
 - Mounted read-only for running tests in container
-- Run with: `docker-compose exec relational pytest tests/ -v`
+- Run with: `./legacy/docker/compose.sh exec relational pytest tests/ -v`
 
 ## Environment Variables
 
@@ -84,75 +86,75 @@ RELATIONAL_EMBEDDING_PROVIDER=local
 
 ```bash
 # Check CLI is accessible
-docker-compose exec relational relational --help
+./legacy/docker/compose.sh exec relational relational --help
 
 # Initialize vector store
-docker-compose exec relational relational init
+./legacy/docker/compose.sh exec relational relational init
 
 # Load entries
-docker-compose exec relational relational load
+./legacy/docker/compose.sh exec relational relational load
 
 # Rebuild vector store from scratch
-docker-compose exec relational relational load --rebuild
+./legacy/docker/compose.sh exec relational relational load --rebuild
 
 # Query for context
-docker-compose exec relational relational query \
+./legacy/docker/compose.sh exec relational relational query \
   --task "How did we approach TDD?" \
   --entity claude-sonnet-4.5 \
   --scope TDD --scope testing
 
 # Check status
-docker-compose exec relational relational stats
+./legacy/docker/compose.sh exec relational relational stats
 
 # Run demo workflow
-docker-compose exec relational relational demo
+./legacy/docker/compose.sh exec relational relational demo
 ```
 
 ### Development Workflow
 
 ```bash
 # 1. Start container
-docker-compose up -d
+./legacy/docker/compose.sh up -d
 
 # 2. Make changes to source code
-# Edit src/relational_domain/cli.py in your editor
+# Edit legacy/src/relational_domain/cli.py in your editor
 
 # 3. Test changes immediately (hot reloading)
-docker-compose exec relational relational query -t "test" -e rob-mosher
+./legacy/docker/compose.sh exec relational relational query -t "test" -e rob-mosher
 
 # 4. Run tests
-docker-compose exec relational pytest tests/ -v
+./legacy/docker/compose.sh exec relational pytest tests/ -v
 
 # 5. View logs
-docker-compose logs -f relational
+./legacy/docker/compose.sh logs -f relational
 
 # 6. Stop container (data persists)
-docker-compose down
+./legacy/docker/compose.sh down
 ```
 
 ### Running Tests
 
 ```bash
 # All tests
-docker-compose exec relational pytest tests/ -v
+./legacy/docker/compose.sh exec relational pytest tests/ -v
 
 # Specific test file
-docker-compose exec relational pytest tests/test_vector_store.py -v
+./legacy/docker/compose.sh exec relational pytest tests/test_vector_store.py -v
 
 # With coverage
-docker-compose exec relational pytest tests/ \
+./legacy/docker/compose.sh exec relational pytest tests/ \
   --cov=relational_domain \
   --cov-report=html
 
 # View coverage report (generated in container)
-docker-compose exec relational cat htmlcov/index.html
+./legacy/docker/compose.sh exec relational cat htmlcov/index.html
 ```
 
 ### Integration Test (End-to-End)
 
 ```bash
 # Full workflow test
-docker-compose exec relational sh -c '
+./legacy/docker/compose.sh exec relational sh -c '
   relational init &&
   relational load &&
   relational query --task "Test query" --entity rob-mosher &&
@@ -192,7 +194,7 @@ docker run --rm \
 
 ```bash
 # Stop container first
-docker-compose down
+./legacy/docker/compose.sh down
 
 # Restore state
 docker run --rm \
@@ -201,7 +203,7 @@ docker run --rm \
   alpine sh -c "cd /data && tar xzf /backup/state-YYYYMMDD-HHMMSS.tar.gz --strip-components=1"
 
 # Restart container
-docker-compose up -d
+./legacy/docker/compose.sh up -d
 ```
 
 ### List and Inspect Volumes
@@ -221,10 +223,10 @@ docker system df -v
 
 ```bash
 # Stop container (keeps volumes)
-docker-compose down
+./legacy/docker/compose.sh down
 
 # Stop and REMOVE volumes (WARNING: deletes all data!)
-docker-compose down -v
+./legacy/docker/compose.sh down -v
 
 # Remove specific volume
 docker volume rm rm-relational-state_relational-state
@@ -239,16 +241,16 @@ docker volume prune
 
 ```bash
 # Tail logs (follow)
-docker-compose logs -f relational
+./legacy/docker/compose.sh logs -f relational
 
 # Last 100 lines
-docker-compose logs --tail=100 relational
+./legacy/docker/compose.sh logs --tail=100 relational
 
 # Since specific time
-docker-compose logs --since 2026-01-23T10:00:00 relational
+./legacy/docker/compose.sh logs --since 2026-01-23T10:00:00 relational
 
 # Since 1 hour ago
-docker-compose logs --since 1h relational
+./legacy/docker/compose.sh logs --since 1h relational
 
 # Using docker logs directly
 docker logs -f relational-domain
@@ -256,7 +258,7 @@ docker logs -f relational-domain
 
 ### Log Configuration
 
-Configured in `docker-compose.yml`:
+Configured in `legacy/docker/compose.yml`:
 ```yaml
 logging:
   driver: "json-file"
@@ -282,42 +284,42 @@ docker ps --format '{{.ID}} {{.Names}}'
 
 ### How It Works
 
-1. **Source code mounted as volume**: `./src/relational_domain:/app/src/relational_domain:ro`
-2. **Package installed in editable mode**: `pip install -e .` in Dockerfile
+1. **Source code mounted as volume**: `./legacy/src/relational_domain:/app/src/relational_domain:ro`
+2. **`legacy/src/` on Python path**: `PYTHONPATH=/app/src` in Dockerfile
 3. **Python imports from mounted directory**: Changes reflected immediately
 4. **No rebuild required**: Edit `.py` files and run commands
 
 ### What Triggers Hot Reload
 
-- ✅ Edit any `.py` file in `src/relational_domain/`
-- ✅ Next `docker-compose exec` command uses updated code
+- ✅ Edit any `.py` file in `legacy/src/relational_domain/`
+- ✅ Next `./legacy/docker/compose.sh exec` command uses updated code
 - ✅ Model stays loaded in memory (fast iteration)
 
 ### What Requires Rebuild
 
-- ❌ Changes to `requirements.txt` or `pyproject.toml` → `docker-compose build`
-- ❌ Changes to `Dockerfile` → `docker-compose build`
-- ❌ System dependency changes → `docker-compose build`
+- ❌ Changes to `legacy/docker/requirements.txt` → `./legacy/docker/compose.sh build`
+- ❌ Changes to `Dockerfile` → `./legacy/docker/compose.sh build`
+- ❌ System dependency changes → `./legacy/docker/compose.sh build`
 
 ### Testing Hot Reload
 
 ```bash
 # 1. Start container
-docker-compose up -d
+./legacy/docker/compose.sh up -d
 
 # 2. Run initial command
-docker-compose exec relational relational stats
+./legacy/docker/compose.sh exec relational relational stats
 
-# 3. Edit src/relational_domain/cli.py
+# 3. Edit legacy/src/relational_domain/cli.py
 # Add a print statement to the stats command
 
 # 4. Run command again (should see your change)
-docker-compose exec relational relational stats
+./legacy/docker/compose.sh exec relational relational stats
 ```
 
 ## Resource Limits
 
-Configured in `docker-compose.yml`:
+Configured in `legacy/docker/compose.yml`:
 ```yaml
 deploy:
   resources:
@@ -331,13 +333,13 @@ deploy:
 
 ### Adjust Limits
 
-Edit `docker-compose.yml` and restart:
+Edit `legacy/docker/compose.yml` and restart:
 ```bash
-# Edit limits in docker-compose.yml
-nano docker-compose.yml
+# Edit limits in legacy/docker/compose.yml
+nano legacy/docker/compose.yml
 
 # Restart container
-docker-compose down && docker-compose up -d
+./legacy/docker/compose.sh down && ./legacy/docker/compose.sh up -d
 ```
 
 ### Monitor Resource Usage
@@ -357,7 +359,7 @@ docker stats --no-stream
 
 ```bash
 # Build production image
-docker build --target production -t relational-domain:prod .
+docker build -f legacy/docker/Dockerfile --target production -t relational-domain:prod .
 
 # Run production container
 docker run -d \
@@ -367,8 +369,8 @@ docker run -d \
   -e RELATIONAL_EMBEDDING_PROVIDER=local \
   relational-domain:prod
 
-# Or use docker-compose with production override
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Or use ./legacy/docker/compose.sh with a production override file
+./legacy/docker/compose.sh -f legacy/docker/compose.prod.yml up -d
 ```
 
 ## Troubleshooting
@@ -377,71 +379,68 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 ```bash
 # Check logs
-docker-compose logs relational
+./legacy/docker/compose.sh logs relational
 
 # Check container status
-docker-compose ps
+./legacy/docker/compose.sh ps
 
 # Rebuild from scratch
-docker-compose down
-docker-compose build --no-cache
-docker-compose up -d
+./legacy/docker/compose.sh down
+./legacy/docker/compose.sh build --no-cache
+./legacy/docker/compose.sh up -d
 ```
 
 ### Package Not Found
 
 ```bash
 # Reinstall package in container
-docker-compose exec relational pip install -e /app
+./legacy/docker/compose.sh exec relational pip install -e /app
 
 # Or rebuild container
-docker-compose build --no-cache
+./legacy/docker/compose.sh build --no-cache
 ```
 
 ### Permission Errors
 
 ```bash
 # Fix permissions on volumes
-docker-compose exec relational chown -R $(id -u):$(id -g) /app/.relational
+./legacy/docker/compose.sh exec relational chown -R $(id -u):$(id -g) /app/.relational
 ```
 
 ### Model Download Fails
 
 ```bash
 # Manually trigger model download
-docker-compose exec relational python -c \
+./legacy/docker/compose.sh exec relational python -c \
   "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
 ```
 
 ### Out of Memory
 
 ```bash
-# Increase memory limit in docker-compose.yml
+# Increase memory limit in legacy/docker/compose.yml
 # Then restart:
-docker-compose down && docker-compose up -d
+./legacy/docker/compose.sh down && ./legacy/docker/compose.sh up -d
 ```
 
 ### Hot Reload Not Working
 
 ```bash
 # Verify volume mount
-docker-compose exec relational ls -la /app/src/relational_domain
+./legacy/docker/compose.sh exec relational ls -la /app/src/relational_domain
 
-# Check if package is in editable mode
-docker-compose exec relational pip show -f relational-domain
-
-# Reinstall in editable mode
-docker-compose exec relational pip install -e /app
+# Check import resolution
+./legacy/docker/compose.sh exec relational python -c "import relational_domain as r; print(r.__file__)"
 ```
 
 ### Clean Slate
 
 ```bash
 # Nuclear option: remove everything and start fresh
-docker-compose down -v
+./legacy/docker/compose.sh down -v
 docker rmi relational-domain:dev
 docker volume rm rm-relational-state_relational-state rm-relational-state_relational-vector-store
-docker-compose up -d --build
+./legacy/docker/compose.sh up -d --build
 ```
 
 ## Advanced Usage
@@ -450,18 +449,18 @@ docker-compose up -d --build
 
 ```bash
 # Python shell with imports available
-docker-compose exec relational python
+./legacy/docker/compose.sh exec relational python
 
 # Bash shell
-docker-compose exec relational bash
+./legacy/docker/compose.sh exec relational bash
 
 # Run specific Python script
-docker-compose exec relational python -c "from relational_domain import *; print('Hello')"
+./legacy/docker/compose.sh exec relational python -c "from relational_domain import *; print('Hello')"
 ```
 
 ### Custom Docker Compose Files
 
-Create `docker-compose.override.yml` for local overrides:
+Create `legacy/docker/compose.override.yml` for local overrides:
 ```yaml
 version: '3.8'
 
@@ -473,7 +472,11 @@ services:
       - ./my-data:/app/my-data
 ```
 
-Docker Compose automatically merges override files.
+Compose does not auto-merge override files when `-f` is used. Include overrides explicitly:
+
+```bash
+./legacy/docker/compose.sh -f legacy/docker/compose.override.yml up -d
+```
 
 ### Multi-Container Setup (Future)
 
@@ -497,7 +500,7 @@ services:
 
 ## Performance Tips
 
-1. **Keep container running**: Avoid `docker-compose run` for repeated commands (model reload penalty)
+1. **Keep container running**: Avoid `./legacy/docker/compose.sh run` for repeated commands (model reload penalty)
 2. **Use named volumes**: Faster than bind mounts on some systems
 3. **Limit logs**: Default 10MB x 3 files prevents disk bloat
 4. **Monitor resources**: Use `docker stats` to watch memory usage
@@ -506,15 +509,15 @@ services:
 ## Security Considerations
 
 1. **Read-only source mounts**: Prevents accidental code modification in container
-2. **No exposed ports**: Container only accessible via `docker-compose exec`
+2. **No exposed ports**: Container only accessible via `./legacy/docker/compose.sh exec`
 3. **Environment secrets**: Use `.env` file (add to `.gitignore`)
 4. **Volume permissions**: Ensure proper ownership and permissions
-5. **Regular updates**: Rebuild with latest base image: `docker-compose build --pull`
+5. **Regular updates**: Rebuild with latest base image: `./legacy/docker/compose.sh build --pull`
 
 ## Next Steps
 
 After Docker setup is working:
-1. **MCP Server Integration** - Add MCP service to docker-compose
+1. **MCP Server Integration** - Add MCP service to Docker Compose
 2. **Health Checks** - Monitor container health
 3. **Metrics** - Add Prometheus/Grafana for monitoring
 4. **CI/CD** - Automated builds and testing
