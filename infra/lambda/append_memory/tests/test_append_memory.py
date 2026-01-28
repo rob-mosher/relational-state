@@ -158,6 +158,35 @@ def test_mcp_tools_call_appends_memory(monkeypatch: pytest.MonkeyPatch) -> None:
     assert body["result"]["content"][0]["type"] == "text"
 
 
+def test_mcp_tools_list_includes_get_readme() -> None:
+    response = append_memory.handler(
+        {"body": json.dumps({"jsonrpc": "2.0", "id": 3, "method": "tools/list"})},
+        None,
+    )
+
+    assert response["statusCode"] == 200
+    body = json.loads(response["body"])
+    tool_names = {tool["name"] for tool in body["result"]["tools"]}
+    assert "get_README" in tool_names
+
+
+def test_mcp_tools_call_get_readme_returns_text() -> None:
+    payload = {
+        "jsonrpc": "2.0",
+        "id": "readme",
+        "method": "tools/call",
+        "params": {"name": "get_README", "arguments": {}},
+    }
+
+    response = append_memory.handler({"body": json.dumps(payload)}, None)
+    assert response["statusCode"] == 200
+    body = json.loads(response["body"])
+    content_text = body["result"]["content"][0]["text"]
+    payload_text = json.loads(content_text)["readme"]
+    assert "Relational State" in payload_text
+    assert "Current state" in payload_text
+
+
 def test_handler_returns_error_when_s3_write_fails(monkeypatch: pytest.MonkeyPatch) -> None:
     os.environ[append_memory.MEMORY_BUCKET_ENV] = "memory-bucket"
 

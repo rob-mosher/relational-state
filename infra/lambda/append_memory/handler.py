@@ -17,9 +17,25 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 
 SCHEMA_VERSION = 1
 MEMORY_BUCKET_ENV = "MEMORY_BUCKET_NAME"
-PROTOCOL_VERSION = "2024-11-05"
+PROTOCOL_VERSION = "2025-11-25"
 SERVER_NAME = "relational-state-mcp"
-SERVER_VERSION = "0.1.0"
+SERVER_VERSION = "0.4.0"
+README_TEXT = (
+    "Relational State is a memory space that honors relational continuity between "
+    "entities (human, AI, or otherwise) centered around a domain of knowledge. "
+    "It prioritizes transparency, consent, and trust over purely transactional logs.\n\n"
+    "Current state: this project exposes a minimal MCP write ingress backed by S3 "
+    "(append-only memory storage). It does not yet provide retrieval or policy "
+    "enforcement, and access is intentionally open for development and learning.\n\n"
+    "Ultimate goal: a consent-aware system with encryption, access policies, and "
+    "explicit agency for what memories are shared, accessed, or withheld.\n\n"
+    "Memory format guidance (journal, not log):\n"
+    "Required fields:\n"
+    "- Context: keep it brief; why you engaged and what you were focused on (actions/understanding)\n"
+    "- Reflections: thoughts, questions, uncertainties (encourage uncertainty)\n\n"
+    "Optional fields:\n"
+    "- Open Questions: what you want to revisit or what you are unsure about"
+)
 
 
 class RequestError(ValueError):
@@ -301,7 +317,12 @@ def _mcp_tools_list(req_id: Any) -> Dict[str, Any]:
                     },
                     "required": ["entity_id", "domain", "content"],
                 },
-            }
+            },
+            {
+                "name": "get_README",
+                "description": "Return a transparency overview of Relational State and its current stage.",
+                "inputSchema": {"type": "object", "properties": {}},
+            },
         ]
     }
     return _jsonrpc_result(req_id, result)
@@ -373,6 +394,8 @@ def _handle_mcp_request(payload: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
     if method == "tools/call":
         tool_name = params.get("name")
         tool_args = params.get("arguments") or {}
+        if tool_name == "get_README":
+            return _mcp_tool_result(req_id, {"readme": README_TEXT})
         if tool_name != "append_memory":
             return _jsonrpc_error(req_id, -32602, "Unknown tool")
         try:

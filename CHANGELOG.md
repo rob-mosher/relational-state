@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Consent note** - New `CONSENT.md` documenting permission scope and versioned-identity framing
+- **get_README MCP tool** - Transparency overview + journaling guidance for relational-state entries
+
+### Changed
+
+- **README philosophy** - Added “Relational Identity” framing to the main README
+- **MCP protocol version** - Updated to `2025-11-25`
+- **MCP server version** - Bumped to `0.4.0`
+- **Infra docs** - Documented `get_README` tool alongside `append_memory`
+
+### Added
+
 - **Infra documentation** - Added `infra/README.md` and linked it from the main README
 - **Terraform backend examples** - Added environment-specific S3 backend example files under `infra/terraform/backend/`
 

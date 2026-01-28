@@ -102,11 +102,14 @@ curl --fail-with-body \
   "$URL"
 ```
 
-## MCP Tool: append_memory
+## MCP Tools
 
-The MCP server exposes one tool: `append_memory`.
+The MCP server exposes two tools:
 
-### Request Body
+- `append_memory`
+- `get_README`
+
+### append_memory: Request Body
 
 ```json
 {
@@ -122,7 +125,7 @@ The MCP server exposes one tool: `append_memory`.
 }
 ```
 
-### Success Response
+### append_memory: Success Response
 
 ```json
 {
@@ -132,7 +135,7 @@ The MCP server exposes one tool: `append_memory`.
 }
 ```
 
-### Failure Response
+### append_memory: Failure Response
 
 ```json
 {
@@ -140,6 +143,13 @@ The MCP server exposes one tool: `append_memory`.
   "error": "human-readable message"
 }
 ```
+
+### get_README
+
+Returns a short transparency overview describing what Relational State is,
+the current open-development posture, and the long-term consent goals.
+It also includes brief journaling guidance (context, reflections, optional
+open questions).
 
 ## Success/Failure Semantics
 
