@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **MCP memory write ingress** - Terraform + Lambda + S3 append-only pipeline for MCP `append_memory`
+- **Lambda MCP handler** - Minimal JSON-RPC MCP server with `initialize`, `tools/list`, `tools/call`
+- **S3-backed memory schema** - Durable write format and lexicographically sortable keys
+- **Infra docs + examples** - Deploy and invoke instructions under `infra/`
 - **MIT License** - Added MIT License to the project
 
 ### Changed
@@ -18,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tooling + docs relocation** - Moved `README.md`, `requirements.txt`, and `pytest.ini` under `legacy/docker/`
 - **Docker build/run adjustments** - Dockerfile now installs a simple `relational` wrapper and uses `PYTHONPATH` instead of packaging metadata
 - **Test discovery configuration** - Pytest now runs via `legacy/docker/pytest.ini` with `pythonpath = ../../legacy/src`
+- **MCP compatibility shims** - Added empty `resources/list` and resource templates list handlers to reduce client errors
 
 ### Fixed
 

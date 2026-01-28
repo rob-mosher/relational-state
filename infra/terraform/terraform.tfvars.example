@@ -1,0 +1,42 @@
+# Relational State - AWS Configuration
+
+# AWS Region
+aws_region = "us-east-1"
+
+# AWS Profile (optional - uses AWS_PROFILE env var or default if empty)
+# Set this to your production profile name when deploying to prod
+# aws_profile = "production"
+aws_profile = ""
+
+# Globally unique S3 bucket name (required)
+# Example: relational-state-memory-prod-123456
+memory_bucket_name = "relational-state-memory-dev-REPLACE_ME"
+
+# API Gateway name
+api_name = "relational-state-mcp-server"
+
+# Stage name (prod, staging, dev)
+stage_name = "prod"
+
+# Lambda function name
+lambda_function_name = "append-memory"
+
+# CloudWatch Logs retention period for API Gateway access logs (days)
+# Common values: 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653
+log_retention_days = 7
+
+# Optional ARNs to notify when alarms fire (for example, SNS topics)
+alarm_actions = []
+
+# Dedicated IAM caller user for SigV4 requests (stored in state if access keys enabled)
+create_caller_user       = true
+create_caller_access_key = true
+caller_user_name         = "relational-state-caller"
+caller_policy_scope      = "stage"
+
+# Temporary dev switch: set to NONE to disable auth.
+api_authorization_type = "AWS_IAM"
+
+# Optional throttling controls (null keeps AWS defaults)
+throttling_burst_limit = 50
+throttling_rate_limit  = 25

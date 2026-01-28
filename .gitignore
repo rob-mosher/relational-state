@@ -34,3 +34,17 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+
+# Terraform (state + local artifacts)
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfplan
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+terraform.tfvars
+terraform.tfvars.json
