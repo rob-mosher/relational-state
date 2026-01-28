@@ -43,7 +43,7 @@ from .tools import (
 app = FastAPI(
     title="Relational Domain MCP Server",
     description="Model Context Protocol orchestration layer for Relational Domain",
-    version="0.3.0",
+    version="0.4.0",
 )
 
 

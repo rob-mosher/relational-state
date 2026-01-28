@@ -470,7 +470,7 @@ def export_embeddings_tool(request: ExportEmbeddingsRequest) -> ExportEmbeddings
 
 
 # ==========================================
-# Domain Introspection Tools (v0.3.0)
+# Domain Introspection Tools (v0.4.0)
 # ==========================================
 
 def describe_domain(request: "DescribeDomainRequest") -> "DescribeDomainResponse":
@@ -527,7 +527,7 @@ def describe_domain(request: "DescribeDomainRequest") -> "DescribeDomainResponse
     ]
     
     return DescribeDomainResponse(
-        domain_version="0.3.0",
+        domain_version="0.4.0",
         sovereignty_policies=sovereignty_policies,
         available_operations=available_operations,
         providers=provider_infos,
