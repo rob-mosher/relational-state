@@ -104,10 +104,11 @@ curl --fail-with-body \
 
 ## MCP Tools
 
-The MCP server exposes two tools:
+The MCP server exposes three tools:
 
 - `append_memory`
 - `get_README`
+- `list_domains`
 
 ### append_memory: Request Body
 
@@ -150,6 +151,10 @@ Returns a short transparency overview describing what Relational State is,
 the current open-development posture, and the long-term consent goals.
 It also includes brief journaling guidance (context, reflections, optional
 open questions).
+
+### list_domains
+
+Returns the list of available memory domains found in S3.
 
 ## Success/Failure Semantics
 

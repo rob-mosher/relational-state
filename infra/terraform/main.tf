@@ -4,8 +4,8 @@ provider "aws" {
 }
 
 locals {
-  lambda_source_dir     = "${path.module}/../lambda/append_memory"
-  lambda_zip_path       = "${path.module}/build/append_memory.zip"
+  lambda_source_dir     = "${path.module}/../lambda/mcp_server"
+  lambda_zip_path       = "${path.module}/build/mcp_server.zip"
   lambda_log_group_name = "/aws/lambda/${var.lambda_function_name}"
   api_access_log_group  = "/aws/apigateway/${var.api_name}/${var.stage_name}"
   mcp_method            = "POST"
@@ -62,6 +62,20 @@ data "aws_iam_policy_document" "append_memory_s3_policy" {
     resources = [
       "${aws_s3_bucket.memory.arn}/*",
     ]
+  }
+
+  statement {
+    sid     = "AllowListMemoryPrefixes"
+    effect  = "Allow"
+    actions = ["s3:ListBucket"]
+    resources = [
+      aws_s3_bucket.memory.arn,
+    ]
+    condition {
+      test     = "StringLike"
+      variable = "s3:prefix"
+      values   = ["memories/*"]
+    }
   }
 
   statement {

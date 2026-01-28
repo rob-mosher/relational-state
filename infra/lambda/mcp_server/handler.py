@@ -1,4 +1,4 @@
-"""append_memory Lambda handler.
+"""MCP server Lambda handler.
 
 This module implements a minimal, durable memory append ingress:
 API Gateway (Lambda proxy) -> Lambda -> S3.
@@ -271,6 +271,45 @@ def _put_object_s3(*, bucket: str, key: str, payload: Mapping[str, Any]) -> None
         raise RuntimeError("Failed to write memory to S3.") from exc
 
 
+def _list_domains_s3(*, bucket: str) -> List[str]:
+    """List unique domain names in the memory bucket."""
+    try:
+        import boto3
+        from botocore.exceptions import BotoCoreError, ClientError
+    except Exception as exc:  # pragma: no cover - import error is runtime-only
+        raise RuntimeError("boto3 is required to read from S3.") from exc
+
+    client = boto3.client("s3")
+    domains: List[str] = []
+    token: Optional[str] = None
+    prefix = "memories/domain="
+
+    while True:
+        kwargs: Dict[str, Any] = {
+            "Bucket": bucket,
+            "Prefix": prefix,
+            "Delimiter": "/",
+        }
+        if token:
+            kwargs["ContinuationToken"] = token
+        try:
+            response = client.list_objects_v2(**kwargs)
+        except (BotoCoreError, ClientError) as exc:
+            raise RuntimeError("Failed to list domains from S3.") from exc
+
+        for item in response.get("CommonPrefixes", []):
+            raw_prefix = item.get("Prefix", "")
+            if raw_prefix.startswith(prefix) and raw_prefix.endswith("/"):
+                domain = raw_prefix[len(prefix) : -1]
+                if domain:
+                    domains.append(domain)
+
+        if not response.get("IsTruncated"):
+            break
+        token = response.get("NextContinuationToken")
+
+    return sorted(set(domains))
+
 def _response(status_code: int, body: Mapping[str, Any]) -> Dict[str, Any]:
     return {
         "statusCode": status_code,
@@ -321,6 +360,11 @@ def _mcp_tools_list(req_id: Any) -> Dict[str, Any]:
             {
                 "name": "get_README",
                 "description": "Return a transparency overview of Relational State and its current stage.",
+                "inputSchema": {"type": "object", "properties": {}},
+            },
+            {
+                "name": "list_domains",
+                "description": "List available memory domains.",
                 "inputSchema": {"type": "object", "properties": {}},
             },
         ]
@@ -396,6 +440,15 @@ def _handle_mcp_request(payload: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
         tool_args = params.get("arguments") or {}
         if tool_name == "get_README":
             return _mcp_tool_result(req_id, {"readme": README_TEXT})
+        if tool_name == "list_domains":
+            try:
+                bucket = _require_bucket_name()
+                domains = _list_domains_s3(bucket=bucket)
+            except RuntimeError as exc:
+                return _mcp_tool_error(req_id, str(exc))
+            except Exception:
+                return _mcp_tool_error(req_id, "Internal server error.")
+            return _mcp_tool_result(req_id, {"domains": domains})
         if tool_name != "append_memory":
             return _jsonrpc_error(req_id, -32602, "Unknown tool")
         try:
@@ -473,6 +526,7 @@ __all__ = [
     "_mcp_tool_error",
     "_mcp_tool_result",
     "_mcp_tools_list",
+    "_list_domains_s3",
     "_normalize_timestamp",
     "_parse_event_body",
     "_parse_event_body_any",

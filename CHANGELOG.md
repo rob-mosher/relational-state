@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Consent note** - New `CONSENT.md` documenting permission scope and versioned-identity framing
 - **get_README MCP tool** - Transparency overview + journaling guidance for relational-state entries
+- **list_domains MCP tool** - Enumerate available memory domains from S3
 
 ### Changed
 
@@ -18,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MCP protocol version** - Updated to `2025-11-25`
 - **MCP server version** - Bumped to `0.4.0`
 - **Infra docs** - Documented `get_README` tool alongside `append_memory`
+- **Lambda folder naming** - Renamed `infra/lambda/append_memory` to `infra/lambda/mcp_server`
 
 ### Added
 
