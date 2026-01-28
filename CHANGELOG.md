@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Infra documentation** - Added `infra/README.md` and linked it from the main README
+- **Terraform backend examples** - Added environment-specific S3 backend example files under `infra/terraform/backend/`
+
+### Changed
+
+- **Terraform backend configuration** - Declared S3 backend in `infra/terraform/versions.tf`
+- **Backend locking approach** - Switched backend examples to S3 native lockfiles (`use_lockfile = true`)
+- **Terraform examples** - Updated `terraform.tfvars.example` defaults and guidance for dev/prod profile alignment
+- **Root README cleanup** - Moved infra deployment details out of the main README
+- **Git ignore rules** - Ignored real backend config files (`infra/terraform/backend/*.hcl`)
+- **Provider lockfile** - Updated `infra/terraform/.terraform.lock.hcl` hashes
+
 ## [0.4.0] - 2026-01-27
 
 ### Added

@@ -48,3 +48,4 @@ override.tf.json
 *_override.tf.json
 terraform.tfvars
 terraform.tfvars.json
+infra/terraform/backend/*.hcl

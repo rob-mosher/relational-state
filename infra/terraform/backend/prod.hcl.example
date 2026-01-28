@@ -1,0 +1,6 @@
+bucket         = "relational-state-tfstate-prod-REPLACE_ME"
+key            = "relational-state/prod/terraform.tfstate"
+region         = "us-east-1"
+encrypt        = true
+profile        = "relational-state-prod"
+use_lockfile   = true

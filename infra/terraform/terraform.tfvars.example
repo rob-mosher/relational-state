@@ -3,20 +3,21 @@
 # AWS Region
 aws_region = "us-east-1"
 
-# AWS Profile (optional - uses AWS_PROFILE env var or default if empty)
-# Set this to your production profile name when deploying to prod
-# aws_profile = "production"
+# AWS Profile (optional - uses AWS_PROFILE env var or default if empty).
+# Keep this aligned with your AWS config profiles for each account.
+# aws_profile = "relational-state-dev"
 aws_profile = ""
 
-# Globally unique S3 bucket name (required)
-# Example: relational-state-memory-prod-123456
-memory_bucket_name = "relational-state-memory-dev-REPLACE_ME"
+# Globally unique S3 bucket name (required).
+# Example: relational-state-memory-dev-123456
+memory_bucket_name = "relational-state-memory-REPLACE_ME"
 
 # API Gateway name
 api_name = "relational-state-mcp-server"
 
-# Stage name (prod, staging, dev)
-stage_name = "prod"
+# Stage name (prod, staging, dev).
+# Keep this aligned with your AWS account/environment.
+stage_name = "dev"
 
 # Lambda function name
 lambda_function_name = "append-memory"
@@ -28,10 +29,11 @@ log_retention_days = 7
 # Optional ARNs to notify when alarms fire (for example, SNS topics)
 alarm_actions = []
 
-# Dedicated IAM caller user for SigV4 requests (stored in state if access keys enabled)
+# Dedicated IAM caller user for SigV4 requests (stored in state if access keys enabled).
+# Make this unique per environment/account to avoid name collisions.
 create_caller_user       = true
 create_caller_access_key = true
-caller_user_name         = "relational-state-caller"
+caller_user_name         = "relational-state-caller-REPLACE_ME"
 caller_policy_scope      = "stage"
 
 # Temporary dev switch: set to NONE to disable auth.
