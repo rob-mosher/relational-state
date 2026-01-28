@@ -165,6 +165,10 @@ Returns the list of available memory domains found in S3.
 
 Returns the list of entity IDs within a given domain.
 
+Optional:
+
+- `entity_prefix`: limit results to entity IDs that start with the prefix.
+
 ## Success/Failure Semantics
 
 - Success is returned only after S3 confirms the write.

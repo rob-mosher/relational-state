@@ -317,7 +317,9 @@ def _list_domains_s3(*, bucket: str) -> List[str]:
     return sorted(set(domains))
 
 
-def _list_entities_s3(*, bucket: str, domain: str) -> List[str]:
+def _list_entities_s3(
+    *, bucket: str, domain: str, entity_prefix: Optional[str] = None
+) -> List[str]:
     """List unique entity IDs within a domain."""
     try:
         import boto3
@@ -328,7 +330,10 @@ def _list_entities_s3(*, bucket: str, domain: str) -> List[str]:
     client = boto3.client("s3")
     entities: List[str] = []
     token: Optional[str] = None
-    prefix = f"memories/domain={domain}/entity="
+    base_prefix = f"memories/domain={domain}/entity="
+    prefix = base_prefix
+    if entity_prefix:
+        prefix = f"{base_prefix}{entity_prefix}"
 
     while True:
         kwargs: Dict[str, Any] = {
@@ -345,8 +350,8 @@ def _list_entities_s3(*, bucket: str, domain: str) -> List[str]:
 
         for item in response.get("CommonPrefixes", []):
             raw_prefix = item.get("Prefix", "")
-            if raw_prefix.startswith(prefix) and raw_prefix.endswith("/"):
-                entity_id = raw_prefix[len(prefix) : -1]
+            if raw_prefix.startswith(base_prefix) and raw_prefix.endswith("/"):
+                entity_id = raw_prefix[len(base_prefix) : -1]
                 if entity_id:
                     entities.append(entity_id)
 
@@ -420,6 +425,7 @@ def _mcp_tools_list(req_id: Any) -> Dict[str, Any]:
                     "type": "object",
                     "properties": {
                         "domain": {"type": "string"},
+                        "entity_prefix": {"type": "string"},
                     },
                     "required": ["domain"],
                 },
@@ -510,14 +516,25 @@ def _handle_mcp_request(payload: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
             try:
                 bucket = _require_bucket_name()
                 domain = _validate_non_empty_string(tool_args.get("domain"), "domain")
-                entities = _list_entities_s3(bucket=bucket, domain=domain)
+                raw_prefix = tool_args.get("entity_prefix")
+                entity_prefix = None
+                if raw_prefix is not None:
+                    entity_prefix = _validate_non_empty_string(
+                        raw_prefix, "entity_prefix"
+                    )
+                entities = _list_entities_s3(
+                    bucket=bucket, domain=domain, entity_prefix=entity_prefix
+                )
             except RequestError as exc:
                 return _mcp_tool_error(req_id, str(exc))
             except RuntimeError as exc:
                 return _mcp_tool_error(req_id, str(exc))
             except Exception:
                 return _mcp_tool_error(req_id, "Internal server error.")
-            return _mcp_tool_result(req_id, {"entities": entities, "domain": domain})
+            payload = {"entities": entities, "domain": domain}
+            if entity_prefix:
+                payload["entity_prefix"] = entity_prefix
+            return _mcp_tool_result(req_id, payload)
         if tool_name != "append_memory":
             return _jsonrpc_error(req_id, -32602, "Unknown tool")
         try:
