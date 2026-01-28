@@ -36,7 +36,7 @@ create_caller_access_key = true
 caller_user_name         = "relational-state-caller-REPLACE_ME"
 caller_policy_scope      = "stage"
 
-# Temporary dev switch: set to NONE to disable auth.
+# Temporary dev switch: set to NONE to disable auth (default: AWS_IAM)
 api_authorization_type = "AWS_IAM"
 
 # Optional throttling controls (null keeps AWS defaults)
