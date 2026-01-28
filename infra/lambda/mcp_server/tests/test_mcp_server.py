@@ -176,6 +176,7 @@ def test_mcp_tools_list_includes_get_readme() -> None:
     tool_names = {tool["name"] for tool in body["result"]["tools"]}
     assert "get_README" in tool_names
     assert "list_domains" in tool_names
+    assert "list_entities_within_domain" in tool_names
 
 
 def test_mcp_tools_call_get_readme_returns_text() -> None:
@@ -212,6 +213,26 @@ def test_mcp_tools_call_list_domains_returns_domains(monkeypatch: pytest.MonkeyP
     content_text = body["result"]["content"][0]["text"]
     payload_text = json.loads(content_text)
     assert payload_text["domains"] == ["alpha", "beta"]
+
+
+def test_mcp_tools_call_list_entities_within_domain(monkeypatch: pytest.MonkeyPatch) -> None:
+    os.environ[mcp_server.MEMORY_BUCKET_ENV] = "memory-bucket"
+    monkeypatch.setattr(mcp_server, "_list_entities_s3", lambda **_: ["alice", "rob"])
+
+    payload = {
+        "jsonrpc": "2.0",
+        "id": "entities",
+        "method": "tools/call",
+        "params": {"name": "list_entities_within_domain", "arguments": {"domain": "work"}},
+    }
+
+    response = mcp_server.handler({"body": json.dumps(payload)}, None)
+    assert response["statusCode"] == 200
+    body = json.loads(response["body"])
+    content_text = body["result"]["content"][0]["text"]
+    payload_text = json.loads(content_text)
+    assert payload_text["domain"] == "work"
+    assert payload_text["entities"] == ["alice", "rob"]
 
 
 def test_handler_returns_error_when_s3_write_fails(monkeypatch: pytest.MonkeyPatch) -> None:

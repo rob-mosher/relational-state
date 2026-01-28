@@ -30,7 +30,7 @@ Future considerations: `docs/future.md`.
 
 In scope:
 
-- MCP tools: `append_memory`, `get_README`, `list_domains`
+- MCP tools: `append_memory`, `get_README`, `list_domains`, `list_entities_within_domain`
 - Durable writes to S3
 - Clear success/failure semantics
 

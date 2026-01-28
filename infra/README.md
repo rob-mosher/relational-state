@@ -109,6 +109,7 @@ The MCP server exposes three tools:
 - `append_memory`
 - `get_README`
 - `list_domains`
+- `list_entities_within_domain`
 
 ### append_memory: Request Body
 
@@ -159,6 +160,10 @@ open questions).
 ### list_domains
 
 Returns the list of available memory domains found in S3.
+
+### list_entities_within_domain
+
+Returns the list of entity IDs within a given domain.
 
 ## Success/Failure Semantics
 
