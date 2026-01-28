@@ -24,6 +24,7 @@ All new work for this phase lives under `infra/`.
 
 Infra docs: `infra/README.md`.
 Consent and agency note: `CONSENT.md`.
+Future considerations: `docs/future.md`.
 
 ### What It Does (and Doesn't)
 

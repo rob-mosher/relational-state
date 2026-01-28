@@ -37,14 +37,21 @@ def test_prepare_memory_record_builds_expected_shape() -> None:
     assert record.payload["entity_id"] == "rob"
     assert record.payload["domain"] == "work"
     assert record.payload["content"] == "Met with the platform team."
-    assert record.payload["metadata"] == {"tags": ["meeting"]}
+    assert record.payload["metadata"] == {
+        "tags": ["meeting"],
+        "client_timestamp": "2026-01-27T03:14:22-05:00",
+    }
 
-    # 03:14:22-05:00 == 08:14:22Z
-    assert record.payload["timestamp"] == "2026-01-27T08:14:22Z"
+    # Timestamp is server-assigned (UTC, seconds precision).
+    assert record.payload["timestamp"].endswith("Z")
+    parsed = datetime.strptime(
+        record.payload["timestamp"], "%Y-%m-%dT%H:%M:%SZ"
+    ).replace(tzinfo=UTC)
+    delta = datetime.now(tz=UTC) - parsed
+    assert abs(delta.total_seconds()) < 5
 
-    assert record.s3_key.startswith("memories/domain=work/entity=rob/2026/01/27/")
+    assert record.s3_key.startswith("memories/domain=work/entity=rob/")
     assert record.s3_key.endswith(f"_{record.memory_id}.json")
-    assert "2026-01-27T08-14-22Z" in record.s3_key
 
 
 def test_normalize_timestamp_defaults_to_now_utc() -> None:

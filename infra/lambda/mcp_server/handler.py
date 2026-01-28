@@ -34,7 +34,9 @@ README_TEXT = (
     "- Context: keep it brief; why you engaged and what you were focused on (actions/understanding)\n"
     "- Reflections: thoughts, questions, uncertainties (encourage uncertainty)\n\n"
     "Optional fields:\n"
-    "- Open Questions: what you want to revisit or what you are unsure about"
+    "- Open Questions: what you want to revisit or what you are unsure about\n\n"
+    "Canonical timestamps are server-assigned at write time; any client timestamp "
+    "is stored only as metadata."
 )
 
 
@@ -223,8 +225,12 @@ def _prepare_memory_record(body: Mapping[str, Any]) -> MemoryRecord:
     domain = _validate_non_empty_string(body.get("domain"), "domain")
     content = _validate_non_empty_string(body.get("content"), "content")
 
-    timestamp = _normalize_timestamp(body.get("timestamp"))
+    raw_timestamp = body.get("timestamp")
+    timestamp = _normalize_timestamp(None)
     metadata = _validate_metadata(body.get("metadata"))
+    if raw_timestamp:
+        metadata = dict(metadata)
+        metadata.setdefault("client_timestamp", raw_timestamp)
 
     req = AppendRequest(
         entity_id=entity_id,
@@ -351,7 +357,6 @@ def _mcp_tools_list(req_id: Any) -> Dict[str, Any]:
                         "entity_id": {"type": "string"},
                         "domain": {"type": "string"},
                         "content": {"type": "string"},
-                        "timestamp": {"type": "string"},
                         "metadata": {"type": "object"},
                     },
                     "required": ["entity_id", "domain", "content"],

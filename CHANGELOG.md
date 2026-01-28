@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Consent note** - New `CONSENT.md` documenting permission scope and versioned-identity framing
 - **get_README MCP tool** - Transparency overview + journaling guidance for relational-state entries
 - **list_domains MCP tool** - Enumerate available memory domains from S3
+- **Future considerations doc** - Centralized deferred ideas in `docs/future.md`
 
 ### Changed
 
@@ -20,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MCP server version** - Bumped to `0.4.0`
 - **Infra docs** - Documented `get_README` tool alongside `append_memory`
 - **Lambda folder naming** - Renamed `infra/lambda/append_memory` to `infra/lambda/mcp_server`
+- **append_memory timestamps** - Canonical timestamps are now server-assigned (client timestamps preserved in metadata)
+- **get_README guidance** - Clarified canonical timestamp behavior in the transparency text
+- **Tests** - Relaxed S3 key assertions now that timestamps are server-assigned
 
 ### Added
 

@@ -117,7 +117,6 @@ The MCP server exposes three tools:
   "entity_id": "string",
   "domain": "string",
   "content": "string",
-  "timestamp": "ISO-8601 string",
   "metadata": {
     "tags": ["string"],
     "source": "string",
@@ -125,6 +124,11 @@ The MCP server exposes three tools:
   }
 }
 ```
+
+Notes:
+
+- The server assigns the canonical `timestamp` at write time (UTC).
+- If a client provides a timestamp, store it in `metadata.client_timestamp`.
 
 ### append_memory: Success Response
 
