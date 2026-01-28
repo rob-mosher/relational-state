@@ -16,9 +16,9 @@ variable "memory_bucket_name" {
 }
 
 variable "lambda_function_name" {
-  description = "Name of the append_memory Lambda function."
+  description = "Name of the MCP server Lambda function."
   type        = string
-  default     = "append-memory"
+  default     = "mcp-server"
 }
 
 variable "api_name" {

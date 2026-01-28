@@ -188,7 +188,7 @@ data "aws_iam_policy_document" "caller_invoke_api" {
   count = var.create_caller_user ? 1 : 0
 
   statement {
-    sid    = "AllowInvokeAppendMemory"
+    sid    = "AllowInvokeMcpServer"
     effect = "Allow"
     actions = [
       "execute-api:Invoke",
@@ -213,7 +213,7 @@ resource "aws_iam_user" "caller" {
 resource "aws_iam_user_policy" "caller_invoke_api" {
   count = var.create_caller_user ? 1 : 0
 
-  name   = "${var.caller_user_name}-invoke-append-memory"
+  name   = "${var.caller_user_name}-invoke-${var.lambda_function_name}"
   user   = aws_iam_user.caller[0].name
   policy = data.aws_iam_policy_document.caller_invoke_api[0].json
 }
@@ -226,7 +226,7 @@ resource "aws_iam_access_key" "caller" {
 
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   alarm_name          = "${var.lambda_function_name}-errors"
-  alarm_description   = "Lambda append_memory returned errors."
+  alarm_description   = "Lambda ${var.lambda_function_name} returned errors."
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
   metric_name         = "Errors"
@@ -245,7 +245,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
 
 resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
   alarm_name          = "${var.lambda_function_name}-throttles"
-  alarm_description   = "Lambda append_memory is being throttled."
+  alarm_description   = "Lambda ${var.lambda_function_name} is being throttled."
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
   metric_name         = "Throttles"

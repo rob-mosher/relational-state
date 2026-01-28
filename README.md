@@ -17,7 +17,7 @@ relational continuity.
 This repo now includes a minimal, durable memory ingestion service on AWS:
 
 - API Gateway (HTTP API, IAM-authenticated)
-- Lambda (`append_memory`)
+- Lambda (`mcp-server`)
 - S3 (versioned, append-only source of truth)
 
 All new work for this phase lives under `infra/`.
@@ -30,7 +30,7 @@ Future considerations: `docs/future.md`.
 
 In scope:
 
-- One MCP tool: `append_memory`
+- MCP tools: `append_memory`, `get_README`, `list_domains`
 - Durable writes to S3
 - Clear success/failure semantics
 

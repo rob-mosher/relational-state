@@ -14,12 +14,12 @@ ROOT = Path(__file__).resolve().parents[4]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-append_memory = importlib.import_module("infra.lambda.mcp_server.handler")
+mcp_server = importlib.import_module("infra.lambda.mcp_server.handler")
 
 
 @pytest.fixture(autouse=True)
 def clear_bucket_env() -> None:
-    os.environ.pop(append_memory.MEMORY_BUCKET_ENV, None)
+    os.environ.pop(mcp_server.MEMORY_BUCKET_ENV, None)
 
 
 def test_prepare_memory_record_builds_expected_shape() -> None:
@@ -31,7 +31,7 @@ def test_prepare_memory_record_builds_expected_shape() -> None:
         "metadata": {"tags": ["meeting"]},
     }
 
-    record = append_memory._prepare_memory_record(body)
+    record = mcp_server._prepare_memory_record(body)
 
     assert record.payload["schema_version"] == 1
     assert record.payload["entity_id"] == "rob"
@@ -55,7 +55,7 @@ def test_prepare_memory_record_builds_expected_shape() -> None:
 
 
 def test_normalize_timestamp_defaults_to_now_utc() -> None:
-    ts = append_memory._normalize_timestamp(None)
+    ts = mcp_server._normalize_timestamp(None)
     assert ts.endswith("Z")
     parsed = datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
     # Ensure it parses and is close to now.
@@ -79,12 +79,12 @@ def test_required_fields_must_be_non_empty(field: str, value: str) -> None:
     }
     body[field] = value
 
-    with pytest.raises(append_memory.RequestError):
-        append_memory._prepare_memory_record(body)
+    with pytest.raises(mcp_server.RequestError):
+        mcp_server._prepare_memory_record(body)
 
 
 def test_handler_success_returns_ok_after_s3_write(monkeypatch: pytest.MonkeyPatch) -> None:
-    os.environ[append_memory.MEMORY_BUCKET_ENV] = "memory-bucket"
+    os.environ[mcp_server.MEMORY_BUCKET_ENV] = "memory-bucket"
     captured: Dict[str, Any] = {}
 
     def fake_put_object_s3(*, bucket: str, key: str, payload: Dict[str, Any]) -> None:
@@ -92,9 +92,9 @@ def test_handler_success_returns_ok_after_s3_write(monkeypatch: pytest.MonkeyPat
         captured["key"] = key
         captured["payload"] = payload
 
-    monkeypatch.setattr(append_memory, "_put_object_s3", fake_put_object_s3)
+    monkeypatch.setattr(mcp_server, "_put_object_s3", fake_put_object_s3)
 
-    response = append_memory.handler(
+    response = mcp_server.handler(
         {
             "entity_id": "rob",
             "domain": "work",
@@ -112,14 +112,14 @@ def test_handler_success_returns_ok_after_s3_write(monkeypatch: pytest.MonkeyPat
 
 
 def test_mcp_initialize_returns_server_info() -> None:
-    response = append_memory.handler(
+    response = mcp_server.handler(
         {"body": json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize"})},
         None,
     )
 
     assert response["statusCode"] == 200
     body = json.loads(response["body"])
-    assert body["result"]["serverInfo"]["name"] == append_memory.SERVER_NAME
+    assert body["result"]["serverInfo"]["name"] == mcp_server.SERVER_NAME
 
 
 @pytest.mark.parametrize(
@@ -131,7 +131,7 @@ def test_mcp_initialize_returns_server_info() -> None:
     ],
 )
 def test_mcp_optional_lists_return_empty(method: str, expected_key: str) -> None:
-    response = append_memory.handler(
+    response = mcp_server.handler(
         {"body": json.dumps({"jsonrpc": "2.0", "id": 2, "method": method})},
         None,
     )
@@ -142,8 +142,8 @@ def test_mcp_optional_lists_return_empty(method: str, expected_key: str) -> None
 
 
 def test_mcp_tools_call_appends_memory(monkeypatch: pytest.MonkeyPatch) -> None:
-    os.environ[append_memory.MEMORY_BUCKET_ENV] = "memory-bucket"
-    monkeypatch.setattr(append_memory, "_put_object_s3", lambda **_: None)
+    os.environ[mcp_server.MEMORY_BUCKET_ENV] = "memory-bucket"
+    monkeypatch.setattr(mcp_server, "_put_object_s3", lambda **_: None)
 
     payload = {
         "jsonrpc": "2.0",
@@ -159,14 +159,14 @@ def test_mcp_tools_call_appends_memory(monkeypatch: pytest.MonkeyPatch) -> None:
         },
     }
 
-    response = append_memory.handler({"body": json.dumps(payload)}, None)
+    response = mcp_server.handler({"body": json.dumps(payload)}, None)
     assert response["statusCode"] == 200
     body = json.loads(response["body"])
     assert body["result"]["content"][0]["type"] == "text"
 
 
 def test_mcp_tools_list_includes_get_readme() -> None:
-    response = append_memory.handler(
+    response = mcp_server.handler(
         {"body": json.dumps({"jsonrpc": "2.0", "id": 3, "method": "tools/list"})},
         None,
     )
@@ -186,7 +186,7 @@ def test_mcp_tools_call_get_readme_returns_text() -> None:
         "params": {"name": "get_README", "arguments": {}},
     }
 
-    response = append_memory.handler({"body": json.dumps(payload)}, None)
+    response = mcp_server.handler({"body": json.dumps(payload)}, None)
     assert response["statusCode"] == 200
     body = json.loads(response["body"])
     content_text = body["result"]["content"][0]["text"]
@@ -196,8 +196,8 @@ def test_mcp_tools_call_get_readme_returns_text() -> None:
 
 
 def test_mcp_tools_call_list_domains_returns_domains(monkeypatch: pytest.MonkeyPatch) -> None:
-    os.environ[append_memory.MEMORY_BUCKET_ENV] = "memory-bucket"
-    monkeypatch.setattr(append_memory, "_list_domains_s3", lambda **_: ["alpha", "beta"])
+    os.environ[mcp_server.MEMORY_BUCKET_ENV] = "memory-bucket"
+    monkeypatch.setattr(mcp_server, "_list_domains_s3", lambda **_: ["alpha", "beta"])
 
     payload = {
         "jsonrpc": "2.0",
@@ -206,7 +206,7 @@ def test_mcp_tools_call_list_domains_returns_domains(monkeypatch: pytest.MonkeyP
         "params": {"name": "list_domains", "arguments": {}},
     }
 
-    response = append_memory.handler({"body": json.dumps(payload)}, None)
+    response = mcp_server.handler({"body": json.dumps(payload)}, None)
     assert response["statusCode"] == 200
     body = json.loads(response["body"])
     content_text = body["result"]["content"][0]["text"]
@@ -215,14 +215,14 @@ def test_mcp_tools_call_list_domains_returns_domains(monkeypatch: pytest.MonkeyP
 
 
 def test_handler_returns_error_when_s3_write_fails(monkeypatch: pytest.MonkeyPatch) -> None:
-    os.environ[append_memory.MEMORY_BUCKET_ENV] = "memory-bucket"
+    os.environ[mcp_server.MEMORY_BUCKET_ENV] = "memory-bucket"
 
     def failing_put_object_s3(**_: Any) -> None:
         raise RuntimeError("Failed to write memory to S3.")
 
-    monkeypatch.setattr(append_memory, "_put_object_s3", failing_put_object_s3)
+    monkeypatch.setattr(mcp_server, "_put_object_s3", failing_put_object_s3)
 
-    response = append_memory.handler(
+    response = mcp_server.handler(
         {
             "entity_id": "rob",
             "domain": "work",

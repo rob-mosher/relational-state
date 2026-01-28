@@ -3,8 +3,8 @@ output "memory_bucket_name" {
   value       = aws_s3_bucket.memory.bucket
 }
 
-output "append_memory_lambda_name" {
-  description = "Lambda function name for append_memory."
+output "mcp_server_lambda_name" {
+  description = "Lambda function name for the MCP server."
   value       = aws_lambda_function.append_memory.function_name
 }
 
@@ -13,23 +13,18 @@ output "api_stage_invoke_url" {
   value       = aws_apigatewayv2_stage.this.invoke_url
 }
 
-output "append_memory_url" {
-  description = "Base HTTPS endpoint for the MCP server."
-  value       = "${trimsuffix(aws_apigatewayv2_stage.this.invoke_url, "/")}/"
-}
-
 output "mcp_url" {
   description = "Base HTTPS endpoint for the MCP server."
   value       = "${trimsuffix(aws_apigatewayv2_stage.this.invoke_url, "/")}/"
 }
 
 output "authorization_type" {
-  description = "Route authorization type (AWS_IAM requires SigV4 signing)."
+  description = "MCP server route authorization type (AWS_IAM requires SigV4 signing)."
   value       = aws_apigatewayv2_route.append_memory.authorization_type
 }
 
 output "lambda_log_group_name" {
-  description = "CloudWatch log group for the append_memory Lambda."
+  description = "CloudWatch log group for the MCP server Lambda."
   value       = aws_cloudwatch_log_group.append_memory_lambda.name
 }
 

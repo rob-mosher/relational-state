@@ -21,9 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MCP server version** - Bumped to `0.4.0`
 - **Infra docs** - Documented `get_README` tool alongside `append_memory`
 - **Lambda folder naming** - Renamed `infra/lambda/append_memory` to `infra/lambda/mcp_server`
+- **MCP server naming defaults** - Terraform defaults now use `mcp-server`, with IAM policy + alarm labels derived from `lambda_function_name`
+- **Terraform outputs cleanup** - Removed legacy `append_memory_*` outputs and standardized on `mcp_server_lambda_name` + `mcp_url`
 - **append_memory timestamps** - Canonical timestamps are now server-assigned (client timestamps preserved in metadata)
 - **get_README guidance** - Clarified canonical timestamp behavior in the transparency text
 - **Tests** - Relaxed S3 key assertions now that timestamps are server-assigned
+- **MCP docs/tests** - Root README now lists MCP tools + Lambda name, and tests renamed to `test_mcp_server.py`
 
 ### Added
 
