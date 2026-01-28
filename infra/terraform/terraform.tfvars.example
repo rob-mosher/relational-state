@@ -42,3 +42,13 @@ api_authorization_type = "AWS_IAM"
 # Optional throttling controls (null keeps AWS defaults)
 throttling_burst_limit = 50
 throttling_rate_limit  = 25
+
+# Custom Domain Configuration (optional but recommended)
+# Leave empty to use default API Gateway URL
+custom_domain_name = ""
+
+# ACM Certificate ARN for your custom domain
+# Must be in `aws_region` (above) for API Gateway
+# Create via: AWS Certificate Manager → Request certificate → FQDN
+# Leave empty if not using custom domain
+acm_certificate_arn = ""

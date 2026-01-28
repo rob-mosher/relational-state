@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **get_README guidance** - Clarified canonical timestamp behavior in the transparency text
 - **Tests** - Relaxed S3 key assertions now that timestamps are server-assigned
 - **MCP docs/tests** - Root README now lists MCP tools + Lambda name, and tests renamed to `test_mcp_server.py`
+- **Custom domain support** - Optional API Gateway custom domain and ACM certificate configuration with `mcp_url` preferring the custom domain
 
 ### Added
 

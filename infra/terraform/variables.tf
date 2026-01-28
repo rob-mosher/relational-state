@@ -96,3 +96,24 @@ variable "throttling_rate_limit" {
   type        = number
   default     = null
 }
+
+variable "custom_domain_name" {
+  description = "Optional custom domain name for the API Gateway."
+  type        = string
+  default     = ""
+
+  validation {
+    condition = (
+      trimspace(var.custom_domain_name) == "" && trimspace(var.acm_certificate_arn) == ""
+      ) || (
+      trimspace(var.custom_domain_name) != "" && trimspace(var.acm_certificate_arn) != ""
+    )
+    error_message = "custom_domain_name and acm_certificate_arn must both be set or both be empty."
+  }
+}
+
+variable "acm_certificate_arn" {
+  description = "Optional ACM certificate ARN for the custom domain (must be in aws_region)."
+  type        = string
+  default     = ""
+}

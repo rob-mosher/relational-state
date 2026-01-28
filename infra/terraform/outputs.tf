@@ -13,9 +13,19 @@ output "api_stage_invoke_url" {
   value       = aws_apigatewayv2_stage.this.invoke_url
 }
 
+output "custom_domain_target" {
+  description = "Target domain name for custom domain DNS (if enabled)."
+  value       = try(aws_apigatewayv2_domain_name.custom[0].domain_name_configuration[0].target_domain_name, null)
+}
+
+output "custom_domain_zone_id" {
+  description = "Hosted zone ID for custom domain alias record (if enabled)."
+  value       = try(aws_apigatewayv2_domain_name.custom[0].domain_name_configuration[0].hosted_zone_id, null)
+}
+
 output "mcp_url" {
   description = "Base HTTPS endpoint for the MCP server."
-  value       = "${trimsuffix(aws_apigatewayv2_stage.this.invoke_url, "/")}/"
+  value       = local.mcp_base_url
 }
 
 output "authorization_type" {

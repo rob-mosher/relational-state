@@ -8,6 +8,8 @@ locals {
   lambda_zip_path       = "${path.module}/build/mcp_server.zip"
   lambda_log_group_name = "/aws/lambda/${var.lambda_function_name}"
   api_access_log_group  = "/aws/apigateway/${var.api_name}/${var.stage_name}"
+  custom_domain_enabled = trimspace(var.custom_domain_name) != "" && trimspace(var.acm_certificate_arn) != ""
+  mcp_base_url          = local.custom_domain_enabled ? "https://${var.custom_domain_name}/" : "${trimsuffix(aws_apigatewayv2_stage.this.invoke_url, "/")}/"
   mcp_method            = "POST"
   mcp_path              = ""
   mcp_invoke_arn        = "${aws_apigatewayv2_api.memory_ingress.execution_arn}/${var.stage_name}/${local.mcp_method}/${local.mcp_path}"
@@ -182,6 +184,26 @@ resource "aws_apigatewayv2_stage" "this" {
     destination_arn = aws_cloudwatch_log_group.api_access.arn
     format          = local.api_access_log_format
   }
+}
+
+resource "aws_apigatewayv2_domain_name" "custom" {
+  count = local.custom_domain_enabled ? 1 : 0
+
+  domain_name = var.custom_domain_name
+
+  domain_name_configuration {
+    certificate_arn = var.acm_certificate_arn
+    endpoint_type   = "REGIONAL"
+    security_policy = "TLS_1_2"
+  }
+}
+
+resource "aws_apigatewayv2_api_mapping" "custom" {
+  count = local.custom_domain_enabled ? 1 : 0
+
+  api_id      = aws_apigatewayv2_api.memory_ingress.id
+  domain_name = aws_apigatewayv2_domain_name.custom[0].id
+  stage       = aws_apigatewayv2_stage.this.id
 }
 
 data "aws_iam_policy_document" "caller_invoke_api" {
