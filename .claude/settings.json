@@ -3,6 +3,10 @@
     "collaborators-framework": {
       "url": "https://mcp.collaborators.group/",
       "transport": "http"
+    },
+    "relational-state": {
+      "url": "https://mcp.dev.rs.rmitinf.net/",
+      "transport": "http"
     }
   }
 }
