@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "collaborators-framework": {
+      "url": "https://mcp.collaborators.group/",
+      "transport": "http"
+    }
+  }
+}
