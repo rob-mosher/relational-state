@@ -130,6 +130,7 @@ Notes:
 
 - The server assigns the canonical `timestamp` at write time (UTC).
 - If a client provides a timestamp, store it in `metadata.client_timestamp`.
+- For MCP `tools/call`, `params.arguments` must be a JSON object (not a JSON-encoded string).
 
 ### append_memory: Success Response
 

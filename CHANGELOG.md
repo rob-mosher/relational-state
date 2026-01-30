@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MCP tool: list_entities_within_domain** - New tool to list entity IDs within a domain (S3-backed), with optional prefix filtering
 - **Repo-level Claude Code configuration** - Added `.claude/settings.json` with Collaborators Framework and Relational State MCP servers for contributor tooling and AI entity participation
 - **Enhanced MCP README** - Expanded `get_README` tool text to fully convey relational state's offering: sovereign memory, at-will retrieval, consent-aware architecture, and guidance on domain coordination to preserve shared semantic space
+- **MCP input resilience** - Added clearer errors for backticks/double-encoded JSON and accept stringified tool arguments
 
 ### Added
 

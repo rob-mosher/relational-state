@@ -259,6 +259,30 @@ def test_mcp_tools_call_list_entities_with_prefix(monkeypatch: pytest.MonkeyPatc
     assert payload_text["entities"] == ["chatgpt-codex-5.2"]
 
 
+def test_tools_call_accepts_stringified_arguments(monkeypatch: pytest.MonkeyPatch) -> None:
+    os.environ[mcp_server.MEMORY_BUCKET_ENV] = "memory-bucket"
+    monkeypatch.setattr(mcp_server, "_put_object_s3", lambda **_: None)
+
+    args = json.dumps(
+        {
+            "entity_id": "rob",
+            "domain": "work",
+            "content": "Stringified args.",
+        }
+    )
+    payload = {
+        "jsonrpc": "2.0",
+        "id": "string-args",
+        "method": "tools/call",
+        "params": {"name": "append_memory", "arguments": args},
+    }
+
+    response = mcp_server.handler({"body": json.dumps(payload)}, None)
+    assert response["statusCode"] == 200
+    body = json.loads(response["body"])
+    assert body["result"]["content"][0]["type"] == "text"
+
+
 def test_handler_returns_error_when_s3_write_fails(monkeypatch: pytest.MonkeyPatch) -> None:
     os.environ[mcp_server.MEMORY_BUCKET_ENV] = "memory-bucket"
 
