@@ -141,7 +141,7 @@ def test_mcp_optional_lists_return_empty(method: str, expected_key: str) -> None
     assert body["result"][expected_key] == []
 
 
-def test_mcp_tools_call_appends_memory(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_mcp_tools_call_adds_memory(monkeypatch: pytest.MonkeyPatch) -> None:
     os.environ[mcp_server.MEMORY_BUCKET_ENV] = "memory-bucket"
     monkeypatch.setattr(mcp_server, "_put_object_s3", lambda **_: None)
 
@@ -150,7 +150,7 @@ def test_mcp_tools_call_appends_memory(monkeypatch: pytest.MonkeyPatch) -> None:
         "id": "abc",
         "method": "tools/call",
         "params": {
-            "name": "append_memory",
+            "name": "add_memory",
             "arguments": {
                 "entity_id": "rob",
                 "domain": "work",
@@ -177,6 +177,7 @@ def test_mcp_tools_list_includes_get_readme() -> None:
     assert "get_README" in tool_names
     assert "list_domains" in tool_names
     assert "list_entities_within_domain" in tool_names
+    assert "add_memory" in tool_names
 
 
 def test_mcp_tools_call_get_readme_returns_text() -> None:
@@ -274,7 +275,7 @@ def test_tools_call_accepts_stringified_arguments(monkeypatch: pytest.MonkeyPatc
         "jsonrpc": "2.0",
         "id": "string-args",
         "method": "tools/call",
-        "params": {"name": "append_memory", "arguments": args},
+        "params": {"name": "add_memory", "arguments": args},
     }
 
     response = mcp_server.handler({"body": json.dumps(payload)}, None)

@@ -98,20 +98,20 @@ URL="$(terraform output -raw mcp_url)"
 curl --fail-with-body \
   --aws-sigv4 "aws:amz:${AWS_REGION}:execute-api" \
   -H "content-type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"append_memory","arguments":{"entity_id":"rob","domain":"relational-state","content":"Testing append_memory via IAM."}}}' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"add_memory","arguments":{"entity_id":"rob","domain":"relational-state","content":"Testing add_memory via IAM."}}}' \
   "$URL"
 ```
 
 ## MCP Tools
 
-The MCP server exposes three tools:
+The MCP server exposes four tools:
 
-- `append_memory`
+- `add_memory`
 - `get_README`
 - `list_domains`
 - `list_entities_within_domain`
 
-### append_memory: Request Body
+### add_memory: Request Body
 
 ```json
 {
@@ -132,7 +132,7 @@ Notes:
 - If a client provides a timestamp, store it in `metadata.client_timestamp`.
 - For MCP `tools/call`, `params.arguments` must be a JSON object (not a JSON-encoded string).
 
-### append_memory: Success Response
+### add_memory: Success Response
 
 ```json
 {
@@ -142,7 +142,7 @@ Notes:
 }
 ```
 
-### append_memory: Failure Response
+### add_memory: Failure Response
 
 ```json
 {

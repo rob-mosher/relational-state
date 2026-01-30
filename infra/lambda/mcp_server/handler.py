@@ -444,8 +444,8 @@ def _mcp_tools_list(req_id: Any) -> Dict[str, Any]:
     result = {
         "tools": [
             {
-                "name": "append_memory",
-                "description": "Append a memory record to durable storage.",
+                "name": "add_memory",
+                "description": "Add a memory record to durable storage.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -600,7 +600,7 @@ def _handle_mcp_request(payload: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
             if entity_prefix:
                 payload["entity_prefix"] = entity_prefix
             return _mcp_tool_result(req_id, payload)
-        if tool_name != "append_memory":
+        if tool_name != "add_memory":
             return _jsonrpc_error(req_id, -32602, "Unknown tool")
         try:
             record = _prepare_memory_record(tool_args)
@@ -622,7 +622,7 @@ def _handle_mcp_request(payload: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
 
 
 def handler(event: Mapping[str, Any], _context: Any) -> Dict[str, Any]:
-    """Lambda entrypoint for MCP and direct append_memory calls."""
+    """Lambda entrypoint for MCP and direct add_memory calls."""
     try:
         decoded = _parse_event_body_any(event)
     except RequestError as exc:
@@ -642,7 +642,7 @@ def handler(event: Mapping[str, Any], _context: Any) -> Dict[str, Any]:
             return {"statusCode": 204, "headers": {}, "body": ""}
         return _response(200, response)
 
-    # Direct append_memory call fallback.
+    # Direct add_memory call fallback.
     try:
         bucket = _require_bucket_name()
         body = _parse_event_body(event)

@@ -19,11 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **README philosophy** - Added “Relational Identity” framing to the main README
 - **MCP protocol version** - Updated to `2025-11-25`
 - **MCP server version** - Bumped to `0.4.0`
-- **Infra docs** - Documented `get_README` tool alongside `append_memory`
+- **Infra docs** - Documented `get_README` tool alongside `add_memory`
 - **Lambda folder naming** - Renamed `infra/lambda/append_memory` to `infra/lambda/mcp_server`
 - **MCP server naming defaults** - Terraform defaults now use `mcp-server`, with IAM policy + alarm labels derived from `lambda_function_name`
 - **Terraform outputs cleanup** - Removed legacy `append_memory_*` outputs and standardized on `mcp_server_lambda_name` + `mcp_url`
-- **append_memory timestamps** - Canonical timestamps are now server-assigned (client timestamps preserved in metadata)
+- **add_memory timestamps** - Canonical timestamps are now server-assigned (client timestamps preserved in metadata)
 - **get_README guidance** - Clarified canonical timestamp behavior in the transparency text
 - **Tests** - Relaxed S3 key assertions now that timestamps are server-assigned
 - **MCP docs/tests** - Root README now lists MCP tools + Lambda name, and tests renamed to `test_mcp_server.py`
@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Repo-level Claude Code configuration** - Added `.claude/settings.json` with Collaborators Framework and Relational State MCP servers for contributor tooling and AI entity participation
 - **Enhanced MCP README** - Expanded `get_README` tool text to fully convey relational state's offering: sovereign memory, at-will retrieval, consent-aware architecture, and guidance on domain coordination to preserve shared semantic space
 - **MCP input resilience** - Added clearer errors for backticks/double-encoded JSON and accept stringified tool arguments
+- **MCP tool rename (breaking)** - Renamed `append_memory` to `add_memory` to reflect storage-agnostic semantics
 
 ### Added
 
