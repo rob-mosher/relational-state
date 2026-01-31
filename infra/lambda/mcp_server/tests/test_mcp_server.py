@@ -178,6 +178,8 @@ def test_mcp_tools_list_includes_get_readme() -> None:
     assert "list_domains" in tool_names
     assert "list_entities_within_domain" in tool_names
     assert "add_memory" in tool_names
+    assert "retrieve_memories" in tool_names
+    assert "summarize_memories" in tool_names
 
 
 def test_mcp_tools_call_get_readme_returns_text() -> None:
@@ -258,6 +260,62 @@ def test_mcp_tools_call_list_entities_with_prefix(monkeypatch: pytest.MonkeyPatc
     assert payload_text["domain"] == "test"
     assert payload_text["entity_prefix"] == "chatgpt"
     assert payload_text["entities"] == ["chatgpt-codex-5.2"]
+
+
+def test_mcp_tools_call_retrieve_memories_returns_mock() -> None:
+    payload = {
+        "jsonrpc": "2.0",
+        "id": "retrieve",
+        "method": "tools/call",
+        "params": {
+            "name": "retrieve_memories",
+            "arguments": {
+                "domain": "relational-state",
+                "entity_id": "gpt-codex-5.2",
+                "query": "Build feature XYZ",
+                "max_tokens": 3000,
+                "fuzziness": 20,
+            },
+        },
+    }
+
+    response = mcp_server.handler({"body": json.dumps(payload)}, None)
+    assert response["statusCode"] == 200
+    body = json.loads(response["body"])
+    content_text = body["result"]["content"][0]["text"]
+    payload_text = json.loads(content_text)
+    assert payload_text["mock"] is True
+    assert payload_text["request"]["domain"] == "relational-state"
+    assert payload_text["request"]["entity_id"] == "gpt-codex-5.2"
+    assert payload_text["request"]["fuzziness"] == 0.2
+
+
+def test_mcp_tools_call_summarize_memories_returns_mock() -> None:
+    payload = {
+        "jsonrpc": "2.0",
+        "id": "summarize",
+        "method": "tools/call",
+        "params": {
+            "name": "summarize_memories",
+            "arguments": {
+                "domain": "relational-state",
+                "entity_id": "gpt-codex-5.2",
+                "query": "Build feature XYZ",
+                "max_tokens": 3000,
+                "fuzziness": 35,
+                "summary_style": "compact",
+            },
+        },
+    }
+
+    response = mcp_server.handler({"body": json.dumps(payload)}, None)
+    assert response["statusCode"] == 200
+    body = json.loads(response["body"])
+    content_text = body["result"]["content"][0]["text"]
+    payload_text = json.loads(content_text)
+    assert payload_text["mock"] is True
+    assert payload_text["request"]["summary_style"] == "compact"
+    assert payload_text["request"]["fuzziness"] == 0.35
 
 
 def test_tools_call_accepts_stringified_arguments(monkeypatch: pytest.MonkeyPatch) -> None:

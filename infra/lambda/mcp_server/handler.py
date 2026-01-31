@@ -479,6 +479,41 @@ def _mcp_tools_list(req_id: Any) -> Dict[str, Any]:
                     "required": ["domain"],
                 },
             },
+            {
+                "name": "retrieve_memories",
+                "description": "Mock memory retrieval with token budget and fuzziness controls.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "domain": {"type": "string"},
+                        "entity_id": {"type": "string"},
+                        "query": {"type": "string"},
+                        "max_tokens": {"type": "integer"},
+                        "max_items": {"type": "integer"},
+                        "fuzziness": {"type": "number"},
+                        "include_related": {"type": "boolean"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                    },
+                },
+            },
+            {
+                "name": "summarize_memories",
+                "description": "Mock RLM-based summarization of memories with fuzziness controls.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "domain": {"type": "string"},
+                        "entity_id": {"type": "string"},
+                        "query": {"type": "string"},
+                        "max_tokens": {"type": "integer"},
+                        "max_items": {"type": "integer"},
+                        "fuzziness": {"type": "number"},
+                        "include_related": {"type": "boolean"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "summary_style": {"type": "string"},
+                    },
+                },
+            },
         ]
     }
     return _jsonrpc_result(req_id, result)
@@ -599,6 +634,131 @@ def _handle_mcp_request(payload: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
             payload = {"entities": entities, "domain": domain}
             if entity_prefix:
                 payload["entity_prefix"] = entity_prefix
+            return _mcp_tool_result(req_id, payload)
+        if tool_name == "retrieve_memories":
+            try:
+                domain = tool_args.get("domain")
+                if domain is not None:
+                    domain = _validate_non_empty_string(domain, "domain")
+                entity_id = tool_args.get("entity_id")
+                if entity_id is not None:
+                    entity_id = _validate_non_empty_string(entity_id, "entity_id")
+                query = tool_args.get("query")
+                if query is not None and not isinstance(query, str):
+                    raise RequestError("Field 'query' must be a string.")
+                max_tokens = tool_args.get("max_tokens", 3000)
+                if not isinstance(max_tokens, int) or max_tokens <= 0:
+                    raise RequestError("Field 'max_tokens' must be a positive integer.")
+                max_items = tool_args.get("max_items", 50)
+                if not isinstance(max_items, int) or max_items <= 0:
+                    raise RequestError("Field 'max_items' must be a positive integer.")
+                fuzziness = tool_args.get("fuzziness", 0.2)
+                if not isinstance(fuzziness, (int, float)) or fuzziness < 0:
+                    raise RequestError("Field 'fuzziness' must be a non-negative number.")
+                if fuzziness > 1:
+                    if fuzziness <= 100:
+                        fuzziness = fuzziness / 100
+                    else:
+                        raise RequestError(
+                            "Field 'fuzziness' must be between 0 and 1 (or 0-100)."
+                        )
+                include_related = tool_args.get("include_related", True)
+                if not isinstance(include_related, bool):
+                    raise RequestError("Field 'include_related' must be a boolean.")
+                tags = tool_args.get("tags")
+                if tags is not None:
+                    if not isinstance(tags, list) or not all(
+                        isinstance(tag, str) and tag.strip() for tag in tags
+                    ):
+                        raise RequestError("Field 'tags' must be a list of strings.")
+                    if any("/" in tag for tag in tags):
+                        raise RequestError("Field 'tags' must not contain '/'.")
+            except RequestError as exc:
+                return _mcp_tool_error(req_id, str(exc))
+
+            payload = {
+                "mock": True,
+                "note": "Retrieval is not yet implemented. Returning a mock response.",
+                "request": {
+                    "domain": domain,
+                    "entity_id": entity_id,
+                    "query": query,
+                    "max_tokens": max_tokens,
+                    "max_items": max_items,
+                    "fuzziness": fuzziness,
+                    "include_related": include_related,
+                    "tags": tags,
+                },
+                "memories": [],
+                "estimated_tokens": 0,
+            }
+            return _mcp_tool_result(req_id, payload)
+        if tool_name == "summarize_memories":
+            try:
+                domain = tool_args.get("domain")
+                if domain is not None:
+                    domain = _validate_non_empty_string(domain, "domain")
+                entity_id = tool_args.get("entity_id")
+                if entity_id is not None:
+                    entity_id = _validate_non_empty_string(entity_id, "entity_id")
+                query = tool_args.get("query")
+                if query is not None and not isinstance(query, str):
+                    raise RequestError("Field 'query' must be a string.")
+                max_tokens = tool_args.get("max_tokens", 3000)
+                if not isinstance(max_tokens, int) or max_tokens <= 0:
+                    raise RequestError("Field 'max_tokens' must be a positive integer.")
+                max_items = tool_args.get("max_items", 50)
+                if not isinstance(max_items, int) or max_items <= 0:
+                    raise RequestError("Field 'max_items' must be a positive integer.")
+                fuzziness = tool_args.get("fuzziness", 0.2)
+                if not isinstance(fuzziness, (int, float)) or fuzziness < 0:
+                    raise RequestError("Field 'fuzziness' must be a non-negative number.")
+                if fuzziness > 1:
+                    if fuzziness <= 100:
+                        fuzziness = fuzziness / 100
+                    else:
+                        raise RequestError(
+                            "Field 'fuzziness' must be between 0 and 1 (or 0-100)."
+                        )
+                include_related = tool_args.get("include_related", True)
+                if not isinstance(include_related, bool):
+                    raise RequestError("Field 'include_related' must be a boolean.")
+                tags = tool_args.get("tags")
+                if tags is not None:
+                    if not isinstance(tags, list) or not all(
+                        isinstance(tag, str) and tag.strip() for tag in tags
+                    ):
+                        raise RequestError("Field 'tags' must be a list of strings.")
+                    if any("/" in tag for tag in tags):
+                        raise RequestError("Field 'tags' must not contain '/'.")
+                summary_style = tool_args.get("summary_style")
+                if summary_style is not None and not isinstance(summary_style, str):
+                    raise RequestError("Field 'summary_style' must be a string.")
+            except RequestError as exc:
+                return _mcp_tool_error(req_id, str(exc))
+
+            payload = {
+                "mock": True,
+                "note": "Summarization is not yet implemented. Returning a mock response.",
+                "rlm": {
+                    "strategy": "recursive-summary-compact",
+                    "max_recursion": 1,
+                },
+                "request": {
+                    "domain": domain,
+                    "entity_id": entity_id,
+                    "query": query,
+                    "max_tokens": max_tokens,
+                    "max_items": max_items,
+                    "fuzziness": fuzziness,
+                    "include_related": include_related,
+                    "tags": tags,
+                    "summary_style": summary_style,
+                },
+                "summary": "",
+                "highlights": [],
+                "estimated_tokens": 0,
+            }
             return _mcp_tool_result(req_id, payload)
         if tool_name != "add_memory":
             return _jsonrpc_error(req_id, -32602, "Unknown tool")
