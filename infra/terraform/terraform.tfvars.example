@@ -36,8 +36,22 @@ create_caller_access_key = true
 caller_user_name         = "relational-state-caller-REPLACE_ME"
 caller_policy_scope      = "stage"
 
-# Temporary dev switch: set to NONE to disable auth (default: AWS_IAM)
+# API auth mode: AWS_IAM, JWT, or NONE
 api_authorization_type = "AWS_IAM"
+
+# Cognito-backed JWT auth (recommended for MCP clients that use bearer tokens).
+# When enabled, Terraform creates a User Pool + app client and wires API Gateway JWT auth.
+create_cognito_user_pool       = false
+cognito_user_pool_name         = "relational-state-mcp"
+cognito_user_pool_client_name  = "relational-state-mcp-client"
+
+# If you disable create_cognito_user_pool but keep api_authorization_type = "JWT",
+# provide your own issuer and audience list.
+# jwt_issuer    = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_XXXXXXX"
+# jwt_audiences = ["your-app-client-id"]
+
+# Optional scopes enforced by API Gateway when using JWT auth.
+jwt_authorization_scopes = []
 
 # Optional throttling controls (null keeps AWS defaults)
 throttling_burst_limit = 50

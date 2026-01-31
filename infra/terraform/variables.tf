@@ -75,14 +75,68 @@ variable "caller_policy_scope" {
 }
 
 variable "api_authorization_type" {
-  description = "API Gateway route authorization type (AWS_IAM or NONE)."
+  description = "API Gateway route authorization type (AWS_IAM, JWT, or NONE)."
   type        = string
   default     = "AWS_IAM"
 
   validation {
-    condition     = contains(["AWS_IAM", "NONE"], var.api_authorization_type)
-    error_message = "api_authorization_type must be one of: AWS_IAM, NONE."
+    condition     = contains(["AWS_IAM", "JWT", "NONE"], var.api_authorization_type)
+    error_message = "api_authorization_type must be one of: AWS_IAM, JWT, NONE."
   }
+}
+
+variable "create_cognito_user_pool" {
+  description = "Whether to create a Cognito User Pool for JWT auth."
+  type        = bool
+  default     = false
+}
+
+variable "cognito_user_pool_name" {
+  description = "Cognito User Pool name (when create_cognito_user_pool = true)."
+  type        = string
+  default     = "relational-state-mcp"
+}
+
+variable "cognito_user_pool_client_name" {
+  description = "Cognito User Pool app client name (when create_cognito_user_pool = true)."
+  type        = string
+  default     = "relational-state-mcp-client"
+}
+
+variable "jwt_issuer" {
+  description = "JWT issuer URL (used when api_authorization_type = JWT and not creating a Cognito pool)."
+  type        = string
+  default     = ""
+
+  validation {
+    condition = (
+      var.api_authorization_type != "JWT"
+      || var.create_cognito_user_pool
+      || trimspace(var.jwt_issuer) != ""
+    )
+    error_message = "jwt_issuer must be set when api_authorization_type is JWT and create_cognito_user_pool is false."
+  }
+}
+
+variable "jwt_audiences" {
+  description = "JWT audience list (used when api_authorization_type = JWT and not creating a Cognito pool)."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition = (
+      var.api_authorization_type != "JWT"
+      || var.create_cognito_user_pool
+      || length(var.jwt_audiences) > 0
+    )
+    error_message = "jwt_audiences must be set when api_authorization_type is JWT and create_cognito_user_pool is false."
+  }
+}
+
+variable "jwt_authorization_scopes" {
+  description = "Optional JWT scopes required by API Gateway (empty list means no scope checks)."
+  type        = list(string)
+  default     = []
 }
 
 variable "throttling_burst_limit" {

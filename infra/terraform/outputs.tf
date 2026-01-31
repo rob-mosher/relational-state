@@ -29,8 +29,33 @@ output "mcp_url" {
 }
 
 output "authorization_type" {
-  description = "MCP server route authorization type (AWS_IAM requires SigV4 signing)."
+  description = "MCP server route authorization type (AWS_IAM requires SigV4 signing, JWT uses bearer tokens)."
   value       = aws_apigatewayv2_route.append_memory.authorization_type
+}
+
+output "jwt_issuer" {
+  description = "JWT issuer URL (Cognito User Pool issuer when enabled)."
+  value       = local.jwt_issuer
+}
+
+output "jwt_audiences" {
+  description = "JWT audience list enforced by the API (Cognito app client ID when enabled)."
+  value       = local.jwt_audiences
+}
+
+output "jwt_jwks_url" {
+  description = "JWKS endpoint for the configured JWT issuer."
+  value       = "${local.jwt_issuer}/.well-known/jwks.json"
+}
+
+output "cognito_user_pool_id" {
+  description = "Cognito User Pool ID (if created)."
+  value       = try(aws_cognito_user_pool.mcp[0].id, null)
+}
+
+output "cognito_user_pool_client_id" {
+  description = "Cognito User Pool app client ID (if created)."
+  value       = try(aws_cognito_user_pool_client.mcp[0].id, null)
 }
 
 output "lambda_log_group_name" {

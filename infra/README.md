@@ -75,13 +75,17 @@ Endpoint route:
 
 Auth:
 
-- The route uses `AWS_IAM` authorization by default.
-- Requests must be SigV4 signed with AWS credentials that can invoke the API.
-- For temporary local dev, set `api_authorization_type = "NONE"` in tfvars.
-- Terraform can optionally create a dedicated caller user and access keys.
-- Use `terraform output -raw caller_access_key_id` and `caller_secret_access_key`.
-- If you see `403`, set `caller_policy_scope = "stage"` (or `"api"`) in tfvars.
-- For production, prefer IAM roles (or JWT auth) and set `create_caller_user = false`.
+- The route supports `AWS_IAM`, `JWT`, or `NONE` (dev-only).
+- `AWS_IAM`: requests must be SigV4 signed with AWS credentials that can invoke the API.
+  - Terraform can optionally create a dedicated caller user and access keys.
+  - Use `terraform output -raw caller_access_key_id` and `caller_secret_access_key`.
+  - If you see `403`, set `caller_policy_scope = "stage"` (or `"api"`) in tfvars.
+- `JWT`: API Gateway validates bearer tokens (Authorization: `Bearer <token>`).
+  - Terraform can create a Cognito User Pool and app client (`create_cognito_user_pool = true`).
+  - The JWT `iss` (issuer) is the User Pool URL, and `aud` (audience) is the app client ID.
+  - No scopes are required by default; tighten later with `jwt_authorization_scopes`.
+- `NONE`: for temporary local dev only.
+- For production, prefer JWT auth and set `create_caller_user = false`.
 - Use the `mcp_url` output as-is (it includes a trailing `/` required by API Gateway routing).
 - If you see `429`, consider setting `throttling_burst_limit` and
   `throttling_rate_limit` in tfvars to explicit dev-friendly values.
@@ -100,6 +104,97 @@ curl --fail-with-body \
   -H "content-type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"add_memory","arguments":{"entity_id":"rob","domain":"relational-state","content":"Testing add_memory via IAM."}}}' \
   "$URL"
+```
+
+Example JWT setup (Cognito, no scopes) and how to mint a token:
+
+```bash
+cd infra/terraform
+POOL_ID="$(terraform output -raw cognito_user_pool_id)"
+CLIENT_ID="$(terraform output -raw cognito_user_pool_client_id)"
+AWS_REGION="us-east-1"
+
+# Create a user (admin only, since allow_admin_create_user_only = true)
+aws cognito-idp admin-create-user \
+  --user-pool-id "$POOL_ID" \
+  --username "dev@example.com" \
+  --temporary-password 'TempPass#1234'
+
+# Set a permanent password
+aws cognito-idp admin-set-user-password \
+  --user-pool-id "$POOL_ID" \
+  --username "dev@example.com" \
+  --password 'StrongPass#1234' \
+  --permanent
+
+# Get tokens (use the ID token for API Gateway JWT auth)
+ID_TOKEN="$(
+  aws cognito-idp initiate-auth \
+    --auth-flow USER_PASSWORD_AUTH \
+    --client-id "$CLIENT_ID" \
+    --auth-parameters USERNAME="dev@example.com",PASSWORD="StrongPass#1234" \
+  | jq -r '.AuthenticationResult.IdToken'
+)"
+```
+
+Codex MCP (JWT bearer token):
+
+```bash
+export MCP_BEARER_TOKEN="$ID_TOKEN"
+codex mcp add relational-state \
+  --url "$(terraform output -raw mcp_url)" \
+  --bearer-token-env-var MCP_BEARER_TOKEN
+```
+
+Token helper script (prints an export line):
+
+```bash
+POOL_ID="$(terraform output -raw cognito_user_pool_id)"
+CLIENT_ID="$(terraform output -raw cognito_user_pool_client_id)"
+USERNAME="dev@example.com"
+PASSWORD="StrongPass#1234"
+
+POOL_ID="$POOL_ID" CLIENT_ID="$CLIENT_ID" USERNAME="$USERNAME" PASSWORD="$PASSWORD" \
+  infra/scripts/mcp_cognito_token.sh
+```
+
+Login once and save a refresh token (avoid reusing the password later):
+
+```bash
+REFRESH_TOKEN_FILE="$HOME/.codex/mcp/relational-state.refresh"
+POOL_ID="$(terraform output -raw cognito_user_pool_id)"
+CLIENT_ID="$(terraform output -raw cognito_user_pool_client_id)"
+USERNAME="dev@example.com"
+PASSWORD="StrongPass#1234"
+
+POOL_ID="$POOL_ID" CLIENT_ID="$CLIENT_ID" USERNAME="$USERNAME" PASSWORD="$PASSWORD" \
+REFRESH_TOKEN_FILE="$REFRESH_TOKEN_FILE" infra/scripts/mcp_cognito_login.sh
+```
+
+Refresh the token without a password (prints an export line):
+
+```bash
+CLIENT_ID="$(terraform output -raw cognito_user_pool_client_id)"
+REFRESH_TOKEN_FILE="$HOME/.codex/mcp/relational-state.refresh"
+
+CLIENT_ID="$CLIENT_ID" REFRESH_TOKEN_FILE="$REFRESH_TOKEN_FILE" \
+  infra/scripts/mcp_cognito_refresh.sh
+```
+
+One-shot add to Codex MCP (uses refresh token if present, otherwise logs in):
+
+```bash
+MCP_NAME="relational-state"
+MCP_URL="$(terraform output -raw mcp_url)"
+POOL_ID="$(terraform output -raw cognito_user_pool_id)"
+CLIENT_ID="$(terraform output -raw cognito_user_pool_client_id)"
+USERNAME="dev@example.com"
+PASSWORD="StrongPass#1234"
+REFRESH_TOKEN_FILE="$HOME/.codex/mcp/relational-state.refresh"
+
+MCP_NAME="$MCP_NAME" MCP_URL="$MCP_URL" CLIENT_ID="$CLIENT_ID" POOL_ID="$POOL_ID" \
+USERNAME="$USERNAME" PASSWORD="$PASSWORD" REFRESH_TOKEN_FILE="$REFRESH_TOKEN_FILE" \
+  infra/scripts/mcp_cognito_codex_add.sh
 ```
 
 ## MCP Tools

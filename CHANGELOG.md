@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **get_README MCP tool** - Transparency overview + journaling guidance for relational-state entries
 - **list_domains MCP tool** - Enumerate available memory domains from S3
 - **Future considerations doc** - Centralized deferred ideas in `docs/future.md`
+- **JWT auth support** - Cognito User Pool + API Gateway JWT authorizer wiring for bearer-token clients
+- **JWT helpers** - Token minting, refresh, and Codex MCP add scripts under `infra/scripts/`
+- **JWT outputs** - New Terraform outputs for issuer/audience and Cognito IDs
+- **JWT config** - Optional Cognito + JWT settings in `terraform.tfvars.example`
+- **JWT variables** - Added Terraform inputs for Cognito creation and JWT issuer/audience/scopes
 
 ### Changed
 
@@ -33,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Enhanced MCP README** - Expanded `get_README` tool text to fully convey relational state's offering: sovereign memory, at-will retrieval, consent-aware architecture, and guidance on domain coordination to preserve shared semantic space
 - **MCP input resilience** - Added clearer errors for backticks/double-encoded JSON and accept stringified tool arguments
 - **MCP tool rename (breaking)** - Renamed `append_memory` to `add_memory` to reflect storage-agnostic semantics
+- **Infra auth docs** - Documented JWT bearer-token flow and Cognito token minting in `infra/README.md`
 
 ### Added
 

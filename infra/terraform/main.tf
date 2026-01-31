@@ -15,6 +15,8 @@ locals {
   mcp_invoke_arn        = "${aws_apigatewayv2_api.memory_ingress.execution_arn}/${var.stage_name}/${local.mcp_method}/${local.mcp_path}"
   mcp_stage_arn         = "${aws_apigatewayv2_api.memory_ingress.execution_arn}/${var.stage_name}/${local.mcp_method}/*"
   mcp_api_arn           = "${aws_apigatewayv2_api.memory_ingress.execution_arn}/*/${local.mcp_method}/*"
+  jwt_issuer            = var.create_cognito_user_pool ? "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.mcp[0].id}" : var.jwt_issuer
+  jwt_audiences         = var.create_cognito_user_pool ? [aws_cognito_user_pool_client.mcp[0].id] : var.jwt_audiences
   api_access_log_format = jsonencode(
     {
       requestId          = "$context.requestId"
@@ -160,6 +162,20 @@ resource "aws_apigatewayv2_integration" "append_memory" {
   timeout_milliseconds   = 10000
 }
 
+resource "aws_apigatewayv2_authorizer" "jwt" {
+  count = var.api_authorization_type == "JWT" ? 1 : 0
+
+  api_id           = aws_apigatewayv2_api.memory_ingress.id
+  name             = "${var.api_name}-jwt"
+  authorizer_type  = "JWT"
+  identity_sources = ["$request.header.Authorization"]
+
+  jwt_configuration {
+    issuer   = local.jwt_issuer
+    audience = local.jwt_audiences
+  }
+}
+
 resource "aws_apigatewayv2_route" "append_memory" {
   api_id    = aws_apigatewayv2_api.memory_ingress.id
   route_key = "POST /"
@@ -167,6 +183,12 @@ resource "aws_apigatewayv2_route" "append_memory" {
 
   # Switchable for dev convenience.
   authorization_type = var.api_authorization_type
+  authorizer_id      = var.api_authorization_type == "JWT" ? aws_apigatewayv2_authorizer.jwt[0].id : null
+  authorization_scopes = (
+    var.api_authorization_type == "JWT" && length(var.jwt_authorization_scopes) > 0
+    ? var.jwt_authorization_scopes
+    : null
+  )
 }
 
 resource "aws_apigatewayv2_stage" "this" {
@@ -204,6 +226,34 @@ resource "aws_apigatewayv2_api_mapping" "custom" {
   api_id      = aws_apigatewayv2_api.memory_ingress.id
   domain_name = aws_apigatewayv2_domain_name.custom[0].id
   stage       = aws_apigatewayv2_stage.this.id
+}
+
+resource "aws_cognito_user_pool" "mcp" {
+  count = var.create_cognito_user_pool ? 1 : 0
+
+  name = var.cognito_user_pool_name
+
+  username_attributes      = ["email"]
+  auto_verified_attributes = ["email"]
+
+  admin_create_user_config {
+    allow_admin_create_user_only = true
+  }
+}
+
+resource "aws_cognito_user_pool_client" "mcp" {
+  count = var.create_cognito_user_pool ? 1 : 0
+
+  name         = var.cognito_user_pool_client_name
+  user_pool_id = aws_cognito_user_pool.mcp[0].id
+
+  generate_secret = false
+
+  explicit_auth_flows = [
+    "ALLOW_ADMIN_USER_PASSWORD_AUTH",
+    "ALLOW_USER_PASSWORD_AUTH",
+    "ALLOW_REFRESH_TOKEN_AUTH",
+  ]
 }
 
 data "aws_iam_policy_document" "caller_invoke_api" {
