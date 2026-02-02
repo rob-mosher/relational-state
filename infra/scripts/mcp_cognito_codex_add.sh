@@ -23,16 +23,18 @@ POOL_ID="${POOL_ID:-}"
 USERNAME="${USERNAME:-}"
 PASSWORD="${PASSWORD:-}"
 REFRESH_TOKEN_FILE="${REFRESH_TOKEN_FILE:-}"
+AUTH_FLOW="${AUTH_FLOW:-}"
 
 if [[ -z "$MCP_NAME" || -z "$MCP_URL" || -z "$CLIENT_ID" ]]; then
   cat <<'USAGE' >&2
 Usage:
   MCP_NAME=... MCP_URL=... CLIENT_ID=... [POOL_ID=...] [USERNAME=...] [PASSWORD=...] \
-  REFRESH_TOKEN_FILE=... infra/scripts/mcp_cognito_codex_add.sh
+  REFRESH_TOKEN_FILE=... [AUTH_FLOW=...] infra/scripts/mcp_cognito_codex_add.sh
 
 Notes:
   - If REFRESH_TOKEN_FILE exists, it will be used to mint a new ID token.
   - If it doesn't exist, USERNAME/PASSWORD/POOL_ID are used to log in and store a refresh token.
+  - AUTH_FLOW is passed through to mcp_cognito_login.sh (e.g., ADMIN_USER_PASSWORD_AUTH).
   - Prints an export line for MCP_BEARER_TOKEN.
 USAGE
   exit 1
@@ -50,7 +52,8 @@ else
   fi
   MCP_BEARER_TOKEN="$(
     POOL_ID="$POOL_ID" CLIENT_ID="$CLIENT_ID" USERNAME="$USERNAME" PASSWORD="$PASSWORD" \
-    REFRESH_TOKEN_FILE="$REFRESH_TOKEN_FILE" infra/scripts/mcp_cognito_login.sh | sed 's/^export MCP_BEARER_TOKEN="//;s/"$//'
+    REFRESH_TOKEN_FILE="$REFRESH_TOKEN_FILE" AUTH_FLOW="$AUTH_FLOW" \
+    infra/scripts/mcp_cognito_login.sh | sed 's/^export MCP_BEARER_TOKEN="//;s/"$//'
   )"
 fi
 

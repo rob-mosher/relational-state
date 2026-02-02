@@ -3,6 +3,11 @@ output "memory_bucket_name" {
   value       = aws_s3_bucket.memory.bucket
 }
 
+output "aws_region" {
+  description = "AWS region for this deployment."
+  value       = var.aws_region
+}
+
 output "mcp_server_lambda_name" {
   description = "Lambda function name for the MCP server."
   value       = aws_lambda_function.append_memory.function_name

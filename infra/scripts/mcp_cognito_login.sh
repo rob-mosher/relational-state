@@ -16,27 +16,44 @@ CLIENT_ID="${CLIENT_ID:-}"
 USERNAME="${USERNAME:-}"
 PASSWORD="${PASSWORD:-}"
 REFRESH_TOKEN_FILE="${REFRESH_TOKEN_FILE:-}"
+AUTH_FLOW="${AUTH_FLOW:-USER_PASSWORD_AUTH}"
 
-if [[ -z "$POOL_ID" || -z "$CLIENT_ID" || -z "$USERNAME" || -z "$PASSWORD" ]]; then
+if [[ -z "$CLIENT_ID" || -z "$USERNAME" || -z "$PASSWORD" ]]; then
   cat <<'USAGE' >&2
 Usage:
-  POOL_ID=... CLIENT_ID=... USERNAME=... PASSWORD=... REFRESH_TOKEN_FILE=... infra/scripts/mcp_cognito_login.sh
+  POOL_ID=... CLIENT_ID=... USERNAME=... PASSWORD=... REFRESH_TOKEN_FILE=... AUTH_FLOW=... infra/scripts/mcp_cognito_login.sh
 
 Notes:
   - POOL_ID and CLIENT_ID come from Terraform outputs.
   - USERNAME/PASSWORD must exist in the Cognito User Pool.
   - REFRESH_TOKEN_FILE is where the refresh token will be stored.
+  - AUTH_FLOW defaults to USER_PASSWORD_AUTH. For admin auth, set:
+    AUTH_FLOW=ADMIN_USER_PASSWORD_AUTH (requires POOL_ID).
   - Prints: export MCP_BEARER_TOKEN="..."
 USAGE
   exit 1
 fi
 
-AUTH_JSON="$(
-  aws cognito-idp initiate-auth \
-    --auth-flow USER_PASSWORD_AUTH \
-    --client-id "$CLIENT_ID" \
-    --auth-parameters USERNAME="$USERNAME",PASSWORD="$PASSWORD"
-)"
+if [[ "$AUTH_FLOW" == ADMIN_* ]]; then
+  if [[ -z "$POOL_ID" ]]; then
+    echo "POOL_ID is required for admin auth flows." >&2
+    exit 1
+  fi
+  AUTH_JSON="$(
+    aws cognito-idp admin-initiate-auth \
+      --user-pool-id "$POOL_ID" \
+      --client-id "$CLIENT_ID" \
+      --auth-flow "$AUTH_FLOW" \
+      --auth-parameters USERNAME="$USERNAME",PASSWORD="$PASSWORD"
+  )"
+else
+  AUTH_JSON="$(
+    aws cognito-idp initiate-auth \
+      --auth-flow "$AUTH_FLOW" \
+      --client-id "$CLIENT_ID" \
+      --auth-parameters USERNAME="$USERNAME",PASSWORD="$PASSWORD"
+  )"
+fi
 
 ID_TOKEN="$(printf '%s' "$AUTH_JSON" | jq -r '.AuthenticationResult.IdToken')"
 REFRESH_TOKEN="$(printf '%s' "$AUTH_JSON" | jq -r '.AuthenticationResult.RefreshToken')"

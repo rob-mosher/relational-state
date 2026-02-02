@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **JWT outputs** - New Terraform outputs for issuer/audience and Cognito IDs
 - **JWT config** - Optional Cognito + JWT settings in `terraform.tfvars.example`
 - **JWT variables** - Added Terraform inputs for Cognito creation and JWT issuer/audience/scopes
+- **Terraform output: aws_region** - Exposed the deployment region in Terraform outputs for scripting and tooling
 
 ### Changed
 
@@ -39,6 +40,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MCP input resilience** - Added clearer errors for backticks/double-encoded JSON and accept stringified tool arguments
 - **MCP tool rename (breaking)** - Renamed `append_memory` to `add_memory` to reflect storage-agnostic semantics
 - **Infra auth docs** - Documented JWT bearer-token flow and Cognito token minting in `infra/README.md`
+- **JWT auth troubleshooting** - Added `UserNotFoundException` guidance with `ADMIN_USER_PASSWORD_AUTH` fallback in `infra/README.md`
+- **JWT helper scripts** - `mcp_cognito_login.sh` now supports `AUTH_FLOW` (including admin auth), and `mcp_cognito_codex_add.sh` passes it through
+- **JWT script permissions** - Marked token/refresh helper scripts as executable for easier CLI use
 
 ### Added
 

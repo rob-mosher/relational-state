@@ -2,7 +2,9 @@
 
 ## Deploy (Terraform)
 
-Terraform lives in `infra/terraform`.
+Terraform lives in `infra/terraform`. The commands below assume you run them
+from the repo root and use `terraform -chdir=infra/terraform` to target the
+subfolder.
 
 This repo uses an S3 backend with native lockfiles. The backend is
 configured via environment-specific HCL files:
@@ -22,21 +24,19 @@ targeting (dev vs prod).
 Example:
 
 ```bash
-cd infra/terraform
-cp backend/dev.hcl.example backend/dev.hcl
-terraform init -backend-config=backend/dev.hcl
-terraform plan -var-file="terraform.tfvars"
-terraform apply -var-file="terraform.tfvars"
+cp infra/terraform/backend/dev.hcl.example infra/terraform/backend/dev.hcl
+terraform -chdir=infra/terraform init -backend-config=backend/dev.hcl
+terraform -chdir=infra/terraform plan -var-file="terraform.tfvars"
+terraform -chdir=infra/terraform apply -var-file="terraform.tfvars"
 ```
 
 For prod, point init at the prod backend (and use prod tfvars/profile):
 
 ```bash
-cd infra/terraform
-cp backend/prod.hcl.example backend/prod.hcl
-terraform init -backend-config=backend/prod.hcl -reconfigure
-terraform plan -var-file="terraform.tfvars"
-terraform apply -var-file="terraform.tfvars"
+cp infra/terraform/backend/prod.hcl.example infra/terraform/backend/prod.hcl
+terraform -chdir=infra/terraform init -backend-config=backend/prod.hcl -reconfigure
+terraform -chdir=infra/terraform plan -var-file="terraform.tfvars"
+terraform -chdir=infra/terraform apply -var-file="terraform.tfvars"
 ```
 
 Key outputs:
@@ -78,7 +78,8 @@ Auth:
 - The route supports `AWS_IAM`, `JWT`, or `NONE` (dev-only).
 - `AWS_IAM`: requests must be SigV4 signed with AWS credentials that can invoke the API.
   - Terraform can optionally create a dedicated caller user and access keys.
-  - Use `terraform output -raw caller_access_key_id` and `caller_secret_access_key`.
+  - Use `terraform -chdir=infra/terraform output -raw caller_access_key_id` and
+    `caller_secret_access_key`.
   - If you see `403`, set `caller_policy_scope = "stage"` (or `"api"`) in tfvars.
 - `JWT`: API Gateway validates bearer tokens (Authorization: `Bearer <token>`).
   - Terraform can create a Cognito User Pool and app client (`create_cognito_user_pool = true`).
@@ -90,14 +91,20 @@ Auth:
 - If you see `429`, consider setting `throttling_burst_limit` and
   `throttling_rate_limit` in tfvars to explicit dev-friendly values.
 
+Pick one auth path below:
+
+### Via SigV4 (AWS_IAM)
+
+Use this when you want IAM-signed requests. Requires a caller user
+(`create_caller_user = true`) or your own IAM principal with invoke permissions.
+
 Example SigV4 call using the Terraform-managed caller user (note the trailing slash):
 
 ```bash
-cd infra/terraform
-export AWS_ACCESS_KEY_ID="$(terraform output -raw caller_access_key_id)"
-export AWS_SECRET_ACCESS_KEY="$(terraform output -raw caller_secret_access_key)"
-export AWS_REGION="us-east-1"
-URL="$(terraform output -raw mcp_url)"
+export AWS_ACCESS_KEY_ID="$(terraform -chdir=infra/terraform output -raw caller_access_key_id)"
+export AWS_SECRET_ACCESS_KEY="$(terraform -chdir=infra/terraform output -raw caller_secret_access_key)"
+export AWS_REGION="$(terraform -chdir=infra/terraform output -raw aws_region)"
+URL="$(terraform -chdir=infra/terraform output -raw mcp_url)"
 
 curl --fail-with-body \
   --aws-sigv4 "aws:amz:${AWS_REGION}:execute-api" \
@@ -106,13 +113,17 @@ curl --fail-with-body \
   "$URL"
 ```
 
+### Via JWT (Cognito User Pool)
+
+Use this when you want bearer tokens. Requires a Cognito User Pool and app client
+(`create_cognito_user_pool = true`).
+
 Example JWT setup (Cognito, no scopes) and how to mint a token:
 
 ```bash
-cd infra/terraform
-POOL_ID="$(terraform output -raw cognito_user_pool_id)"
-CLIENT_ID="$(terraform output -raw cognito_user_pool_client_id)"
-AWS_REGION="us-east-1"
+POOL_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_id)"
+CLIENT_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_client_id)"
+AWS_REGION="$(terraform -chdir=infra/terraform output -raw aws_region)"
 
 # Create a user (admin only, since allow_admin_create_user_only = true)
 aws cognito-idp admin-create-user \
@@ -137,20 +148,37 @@ ID_TOKEN="$(
 )"
 ```
 
+Troubleshooting (JWT auth flow):
+
+- If `initiate-auth` returns `UserNotFoundException` for a confirmed user, the app
+  client may not allow `USER_PASSWORD_AUTH` (or is configured to use SRP).
+  In that case, use the admin auth flow instead:
+
+```bash
+ID_TOKEN="$(
+  aws cognito-idp admin-initiate-auth \
+    --user-pool-id "$POOL_ID" \
+    --client-id "$CLIENT_ID" \
+    --auth-flow ADMIN_USER_PASSWORD_AUTH \
+    --auth-parameters USERNAME="dev@example.com",PASSWORD="StrongPass#1234" \
+  | jq -r '.AuthenticationResult.IdToken'
+)"
+```
+
 Codex MCP (JWT bearer token):
 
 ```bash
 export MCP_BEARER_TOKEN="$ID_TOKEN"
 codex mcp add relational-state \
-  --url "$(terraform output -raw mcp_url)" \
+  --url "$(terraform -chdir=infra/terraform output -raw mcp_url)" \
   --bearer-token-env-var MCP_BEARER_TOKEN
 ```
 
 Token helper script (prints an export line):
 
 ```bash
-POOL_ID="$(terraform output -raw cognito_user_pool_id)"
-CLIENT_ID="$(terraform output -raw cognito_user_pool_client_id)"
+POOL_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_id)"
+CLIENT_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_client_id)"
 USERNAME="dev@example.com"
 PASSWORD="StrongPass#1234"
 
@@ -162,19 +190,24 @@ Login once and save a refresh token (avoid reusing the password later):
 
 ```bash
 REFRESH_TOKEN_FILE="$HOME/.codex/mcp/relational-state.refresh"
-POOL_ID="$(terraform output -raw cognito_user_pool_id)"
-CLIENT_ID="$(terraform output -raw cognito_user_pool_client_id)"
+POOL_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_id)"
+CLIENT_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_client_id)"
 USERNAME="dev@example.com"
 PASSWORD="StrongPass#1234"
 
 POOL_ID="$POOL_ID" CLIENT_ID="$CLIENT_ID" USERNAME="$USERNAME" PASSWORD="$PASSWORD" \
 REFRESH_TOKEN_FILE="$REFRESH_TOKEN_FILE" infra/scripts/mcp_cognito_login.sh
+
+# If the app client doesn't allow USER_PASSWORD_AUTH (and you see UserNotFoundException),
+# use the admin auth flow instead:
+# AUTH_FLOW=ADMIN_USER_PASSWORD_AUTH POOL_ID=... CLIENT_ID=... USERNAME=... PASSWORD=... \
+# REFRESH_TOKEN_FILE=... infra/scripts/mcp_cognito_login.sh
 ```
 
 Refresh the token without a password (prints an export line):
 
 ```bash
-CLIENT_ID="$(terraform output -raw cognito_user_pool_client_id)"
+CLIENT_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_client_id)"
 REFRESH_TOKEN_FILE="$HOME/.codex/mcp/relational-state.refresh"
 
 CLIENT_ID="$CLIENT_ID" REFRESH_TOKEN_FILE="$REFRESH_TOKEN_FILE" \
@@ -185,9 +218,9 @@ One-shot add to Codex MCP (uses refresh token if present, otherwise logs in):
 
 ```bash
 MCP_NAME="relational-state"
-MCP_URL="$(terraform output -raw mcp_url)"
-POOL_ID="$(terraform output -raw cognito_user_pool_id)"
-CLIENT_ID="$(terraform output -raw cognito_user_pool_client_id)"
+MCP_URL="$(terraform -chdir=infra/terraform output -raw mcp_url)"
+POOL_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_id)"
+CLIENT_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_client_id)"
 USERNAME="dev@example.com"
 PASSWORD="StrongPass#1234"
 REFRESH_TOKEN_FILE="$HOME/.codex/mcp/relational-state.refresh"
@@ -195,7 +228,16 @@ REFRESH_TOKEN_FILE="$HOME/.codex/mcp/relational-state.refresh"
 MCP_NAME="$MCP_NAME" MCP_URL="$MCP_URL" CLIENT_ID="$CLIENT_ID" POOL_ID="$POOL_ID" \
 USERNAME="$USERNAME" PASSWORD="$PASSWORD" REFRESH_TOKEN_FILE="$REFRESH_TOKEN_FILE" \
   infra/scripts/mcp_cognito_codex_add.sh
+
+# For admin auth flow:
+# AUTH_FLOW=ADMIN_USER_PASSWORD_AUTH MCP_NAME=... MCP_URL=... CLIENT_ID=... POOL_ID=... \
+# USERNAME=... PASSWORD=... REFRESH_TOKEN_FILE=... infra/scripts/mcp_cognito_codex_add.sh
 ```
+
+### Via NONE (dev-only)
+
+Only use this for temporary local development. This disables authentication;
+do not expose the endpoint publicly and do not use in production.
 
 ## MCP Tools
 
