@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **Black dependency upgrade** - Updated black from 23.12.0 to >=24.3.0 in legacy/docker/requirements.txt to fix CVE-2024-21503 (ReDoS vulnerability, GHSA-fj7x-q9j7-g6q6)
+
 ### Added
 
 - **Consent note** - New `CONSENT.md` documenting permission scope and versioned-identity framing
@@ -204,6 +208,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Balance entry guidance: recommend anchor, not too poetic, not too log-based
 - Enhance directory structure guidance and add state file examples
 
+[0.5.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.5.0
 [0.4.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.4.0
 [0.3.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.3.0
 [0.2.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.2.0
