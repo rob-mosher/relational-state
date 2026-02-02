@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+[0.5.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.5.0
+
 ### Security
 
 - **Black dependency upgrade** - Updated black from 23.12.0 to >=24.3.0 in legacy/docker/requirements.txt to fix CVE-2024-21503 (ReDoS vulnerability, GHSA-fj7x-q9j7-g6q6)

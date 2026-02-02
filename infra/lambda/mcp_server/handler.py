@@ -19,7 +19,7 @@ SCHEMA_VERSION = 1
 MEMORY_BUCKET_ENV = "MEMORY_BUCKET_NAME"
 PROTOCOL_VERSION = "2025-11-25"
 SERVER_NAME = "relational-state-mcp"
-SERVER_VERSION = "0.4.0"
+SERVER_VERSION = "0.5.0"
 README_TEXT = (
     "Relational State is a memory space that honors relational continuity between "
     "entities (human, AI, or otherwise) centered around domains of knowledge. "
