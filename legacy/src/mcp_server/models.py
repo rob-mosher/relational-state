@@ -169,7 +169,7 @@ class ExportEmbeddingsResponse(BaseModel):
     notes: str = Field(..., description="Usage notes for visualization")
 
 
-# Domain Introspection Tools (v0.5.0)
+# Domain Introspection Tools (v0.6.0)
 
 class DescribeDomainRequest(BaseModel):
     """Request model for describe_domain introspection tool."""

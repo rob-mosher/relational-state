@@ -15,7 +15,7 @@ Philosophy:
     - Impact Above Origin: Focus on contribution, not origin
 """
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 __author__ = "Rob Mosher"
 
 from relational_engine.models import Entry, ContextEnvelope, ContextEntry, Config

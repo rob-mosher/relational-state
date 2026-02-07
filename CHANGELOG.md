@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-02-07
+
+Release notes: `0.6.0` centers on authentication. This release introduces OAuth metadata support, optional dynamic client registration, and Cognito-backed JWT configuration so MCP clients can discover, authenticate, and invoke the service with clearer security boundaries and improved operational consistency.
+
 ### Added
 
 - **OAuth metadata endpoints** - Added MCP OAuth discovery endpoints (`/.well-known/oauth-protected-resource`, `/.well-known/oauth-authorization-server`) in API Gateway + Lambda
@@ -224,6 +228,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Balance entry guidance: recommend anchor, not too poetic, not too log-based
 - Enhance directory structure guidance and add state file examples
 
+[0.6.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.6.0
 [0.5.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.5.0
 [0.4.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.4.0
 [0.3.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.3.0
