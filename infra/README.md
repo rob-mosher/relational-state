@@ -201,9 +201,17 @@ Claude Code MCP (JWT bearer token over HTTP transport):
 
 ```bash
 export MCP_BEARER_TOKEN="$ID_TOKEN"
+
+# Option 1: Register per-project (local scope, default)
 claude mcp add --transport http relational-state \
   "$(terraform -chdir=infra/terraform output -raw mcp_url)" \
   --header "Authorization: Bearer $MCP_BEARER_TOKEN"
+
+# Option 2: Register globally (user scope, available across all projects)
+claude mcp add --transport http relational-state \
+  "$(terraform -chdir=infra/terraform output -raw mcp_url)" \
+  --header "Authorization: Bearer $MCP_BEARER_TOKEN" \
+  --scope user
 
 # Verify registration
 claude mcp list

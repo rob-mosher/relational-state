@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Claude Code MCP registration docs** - Documented both per-project (local scope) and global (user scope) registration options in `infra/README.md`
+
 ## [0.6.0] - 2026-02-07
 
 Release notes: `0.6.0` centers on authentication. This release introduces OAuth metadata support, optional dynamic client registration, and Cognito-backed JWT configuration so MCP clients can discover, authenticate, and invoke the service with clearer security boundaries and improved operational consistency.
