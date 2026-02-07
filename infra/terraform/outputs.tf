@@ -10,7 +10,7 @@ output "aws_region" {
 
 output "mcp_server_lambda_name" {
   description = "Lambda function name for the MCP server."
-  value       = aws_lambda_function.append_memory.function_name
+  value       = aws_lambda_function.add_memory.function_name
 }
 
 output "api_stage_invoke_url" {
@@ -35,7 +35,7 @@ output "mcp_url" {
 
 output "authorization_type" {
   description = "MCP server route authorization type (AWS_IAM requires SigV4 signing, JWT uses bearer tokens)."
-  value       = aws_apigatewayv2_route.append_memory.authorization_type
+  value       = aws_apigatewayv2_route.add_memory.authorization_type
 }
 
 output "jwt_issuer" {
@@ -90,7 +90,7 @@ output "cognito_user_pool_client_id" {
 
 output "lambda_log_group_name" {
   description = "CloudWatch log group for the MCP server Lambda."
-  value       = aws_cloudwatch_log_group.append_memory_lambda.name
+  value       = aws_cloudwatch_log_group.add_memory_lambda.name
 }
 
 output "api_access_log_group_name" {

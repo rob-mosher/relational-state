@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **OAuth route matching robustness** - Lambda now normalizes stage-prefixed paths so `.well-known` endpoints work consistently across default/custom API Gateway URLs
 - **Lambda tests** - Added coverage for OAuth metadata routes and path normalization behavior
+- **Terraform internal naming alignment** - Renamed remaining Terraform `append_memory` addresses/references to `add_memory` and added `moved` blocks to preserve state continuity during the refactor
 
 ## [0.5.0] - 2026-02-01
 

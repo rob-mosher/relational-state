@@ -3,6 +3,51 @@ provider "aws" {
   profile = trimspace(var.aws_profile) != "" ? trimspace(var.aws_profile) : null
 }
 
+moved {
+  from = data.archive_file.append_memory_zip
+  to   = data.archive_file.add_memory_zip
+}
+
+moved {
+  from = resource.aws_iam_role.append_memory_lambda_role
+  to   = resource.aws_iam_role.add_memory_lambda_role
+}
+
+moved {
+  from = data.aws_iam_policy_document.append_memory_s3_policy
+  to   = data.aws_iam_policy_document.add_memory_s3_policy
+}
+
+moved {
+  from = resource.aws_iam_role_policy.append_memory_s3
+  to   = resource.aws_iam_role_policy.add_memory_s3
+}
+
+moved {
+  from = resource.aws_iam_role_policy_attachment.append_memory_logs
+  to   = resource.aws_iam_role_policy_attachment.add_memory_logs
+}
+
+moved {
+  from = resource.aws_cloudwatch_log_group.append_memory_lambda
+  to   = resource.aws_cloudwatch_log_group.add_memory_lambda
+}
+
+moved {
+  from = resource.aws_lambda_function.append_memory
+  to   = resource.aws_lambda_function.add_memory
+}
+
+moved {
+  from = resource.aws_apigatewayv2_integration.append_memory
+  to   = resource.aws_apigatewayv2_integration.add_memory
+}
+
+moved {
+  from = resource.aws_apigatewayv2_route.append_memory
+  to   = resource.aws_apigatewayv2_route.add_memory
+}
+
 locals {
   lambda_source_dir     = "${path.module}/../lambda/mcp_server"
   lambda_zip_path       = "${path.module}/build/mcp_server.zip"
@@ -71,7 +116,7 @@ locals {
   )
 }
 
-data "archive_file" "append_memory_zip" {
+data "archive_file" "add_memory_zip" {
   type        = "zip"
   source_dir  = local.lambda_source_dir
   output_path = local.lambda_zip_path
@@ -90,12 +135,12 @@ data "aws_iam_policy_document" "lambda_assume_role" {
   }
 }
 
-resource "aws_iam_role" "append_memory_lambda_role" {
+resource "aws_iam_role" "add_memory_lambda_role" {
   name               = "${var.lambda_function_name}-role"
   assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
 }
 
-data "aws_iam_policy_document" "append_memory_s3_policy" {
+data "aws_iam_policy_document" "add_memory_s3_policy" {
   statement {
     sid     = "AllowPutMemoryObjects"
     effect  = "Allow"
@@ -144,14 +189,14 @@ data "aws_iam_policy_document" "append_memory_s3_policy" {
   }
 }
 
-resource "aws_iam_role_policy" "append_memory_s3" {
+resource "aws_iam_role_policy" "add_memory_s3" {
   name   = "${var.lambda_function_name}-s3"
-  role   = aws_iam_role.append_memory_lambda_role.id
-  policy = data.aws_iam_policy_document.append_memory_s3_policy.json
+  role   = aws_iam_role.add_memory_lambda_role.id
+  policy = data.aws_iam_policy_document.add_memory_s3_policy.json
 }
 
-resource "aws_iam_role_policy_attachment" "append_memory_logs" {
-  role       = aws_iam_role.append_memory_lambda_role.name
+resource "aws_iam_role_policy_attachment" "add_memory_logs" {
+  role       = aws_iam_role.add_memory_lambda_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
@@ -167,7 +212,7 @@ resource "aws_s3_bucket_versioning" "memory" {
   }
 }
 
-resource "aws_cloudwatch_log_group" "append_memory_lambda" {
+resource "aws_cloudwatch_log_group" "add_memory_lambda" {
   name              = local.lambda_log_group_name
   retention_in_days = var.log_retention_days
 }
@@ -177,15 +222,15 @@ resource "aws_cloudwatch_log_group" "api_access" {
   retention_in_days = var.log_retention_days
 }
 
-resource "aws_lambda_function" "append_memory" {
+resource "aws_lambda_function" "add_memory" {
   function_name = var.lambda_function_name
-  role          = aws_iam_role.append_memory_lambda_role.arn
+  role          = aws_iam_role.add_memory_lambda_role.arn
   handler       = "handler.handler"
   runtime       = "python3.11"
   timeout       = 10
 
-  filename         = data.archive_file.append_memory_zip.output_path
-  source_code_hash = data.archive_file.append_memory_zip.output_base64sha256
+  filename         = data.archive_file.add_memory_zip.output_path
+  source_code_hash = data.archive_file.add_memory_zip.output_base64sha256
 
   environment {
     variables = {
@@ -206,10 +251,10 @@ resource "aws_lambda_function" "append_memory" {
   }
 
   depends_on = [
-    aws_iam_role_policy_attachment.append_memory_logs,
-    aws_iam_role_policy.append_memory_s3,
+    aws_iam_role_policy_attachment.add_memory_logs,
+    aws_iam_role_policy.add_memory_s3,
     aws_s3_bucket_versioning.memory,
-    aws_cloudwatch_log_group.append_memory_lambda,
+    aws_cloudwatch_log_group.add_memory_lambda,
   ]
 }
 
@@ -218,10 +263,10 @@ resource "aws_apigatewayv2_api" "memory_ingress" {
   protocol_type = "HTTP"
 }
 
-resource "aws_apigatewayv2_integration" "append_memory" {
+resource "aws_apigatewayv2_integration" "add_memory" {
   api_id                 = aws_apigatewayv2_api.memory_ingress.id
   integration_type       = "AWS_PROXY"
-  integration_uri        = aws_lambda_function.append_memory.invoke_arn
+  integration_uri        = aws_lambda_function.add_memory.invoke_arn
   payload_format_version = "2.0"
   timeout_milliseconds   = 10000
 }
@@ -240,10 +285,10 @@ resource "aws_apigatewayv2_authorizer" "jwt" {
   }
 }
 
-resource "aws_apigatewayv2_route" "append_memory" {
+resource "aws_apigatewayv2_route" "add_memory" {
   api_id    = aws_apigatewayv2_api.memory_ingress.id
   route_key = "POST /"
-  target    = "integrations/${aws_apigatewayv2_integration.append_memory.id}"
+  target    = "integrations/${aws_apigatewayv2_integration.add_memory.id}"
 
   # Switchable for dev convenience.
   authorization_type = var.api_authorization_type
@@ -258,7 +303,7 @@ resource "aws_apigatewayv2_route" "append_memory" {
 resource "aws_apigatewayv2_route" "oauth_protected_resource" {
   api_id    = aws_apigatewayv2_api.memory_ingress.id
   route_key = "GET /.well-known/oauth-protected-resource"
-  target    = "integrations/${aws_apigatewayv2_integration.append_memory.id}"
+  target    = "integrations/${aws_apigatewayv2_integration.add_memory.id}"
 
   authorization_type = "NONE"
 }
@@ -266,7 +311,7 @@ resource "aws_apigatewayv2_route" "oauth_protected_resource" {
 resource "aws_apigatewayv2_route" "oauth_authorization_server" {
   api_id    = aws_apigatewayv2_api.memory_ingress.id
   route_key = "GET /.well-known/oauth-authorization-server"
-  target    = "integrations/${aws_apigatewayv2_integration.append_memory.id}"
+  target    = "integrations/${aws_apigatewayv2_integration.add_memory.id}"
 
   authorization_type = "NONE"
 }
@@ -276,7 +321,7 @@ resource "aws_apigatewayv2_route" "oauth_register" {
 
   api_id    = aws_apigatewayv2_api.memory_ingress.id
   route_key = "POST /oauth/register"
-  target    = "integrations/${aws_apigatewayv2_integration.append_memory.id}"
+  target    = "integrations/${aws_apigatewayv2_integration.add_memory.id}"
 
   authorization_type = "NONE"
 }
@@ -415,7 +460,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   ok_actions          = var.alarm_actions
 
   dimensions = {
-    FunctionName = aws_lambda_function.append_memory.function_name
+    FunctionName = aws_lambda_function.add_memory.function_name
   }
 }
 
@@ -434,7 +479,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
   ok_actions          = var.alarm_actions
 
   dimensions = {
-    FunctionName = aws_lambda_function.append_memory.function_name
+    FunctionName = aws_lambda_function.add_memory.function_name
   }
 }
 
@@ -461,7 +506,7 @@ resource "aws_cloudwatch_metric_alarm" "api_5xx" {
 resource "aws_lambda_permission" "allow_apigateway" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.append_memory.function_name
+  function_name = aws_lambda_function.add_memory.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.memory_ingress.execution_arn}/*/*"
 }
