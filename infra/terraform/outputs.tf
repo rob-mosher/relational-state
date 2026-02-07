@@ -53,6 +53,31 @@ output "jwt_jwks_url" {
   value       = "${local.jwt_issuer}/.well-known/jwks.json"
 }
 
+output "oauth_protected_resource_url" {
+  description = "OAuth protected resource metadata URL."
+  value       = "${local.mcp_base_url}.well-known/oauth-protected-resource"
+}
+
+output "oauth_authorization_endpoint" {
+  description = "OAuth authorization endpoint (Cognito Hosted UI when enabled)."
+  value       = local.oauth_authorization_endpoint
+}
+
+output "oauth_token_endpoint" {
+  description = "OAuth token endpoint (Cognito Hosted UI when enabled)."
+  value       = local.oauth_token_endpoint
+}
+
+output "oauth_registration_endpoint" {
+  description = "OAuth dynamic client registration endpoint (if enabled)."
+  value       = local.oauth_registration_endpoint
+}
+
+output "oauth_issuer" {
+  description = "OAuth issuer used for the MCP resource."
+  value       = local.oauth_issuer
+}
+
 output "cognito_user_pool_id" {
   description = "Cognito User Pool ID (if created)."
   value       = try(aws_cognito_user_pool.mcp[0].id, null)

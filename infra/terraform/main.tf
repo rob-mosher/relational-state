@@ -17,6 +17,43 @@ locals {
   mcp_api_arn           = "${aws_apigatewayv2_api.memory_ingress.execution_arn}/*/${local.mcp_method}/*"
   jwt_issuer            = var.create_cognito_user_pool ? "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.mcp[0].id}" : var.jwt_issuer
   jwt_audiences         = var.create_cognito_user_pool ? [aws_cognito_user_pool_client.mcp[0].id] : var.jwt_audiences
+  cognito_domain_enabled = (
+    var.create_cognito_user_pool && trimspace(var.cognito_domain_prefix) != ""
+  )
+  cognito_domain                 = local.cognito_domain_enabled ? "${var.cognito_domain_prefix}.auth.${var.aws_region}.amazoncognito.com" : ""
+  cognito_authorization_endpoint = local.cognito_domain_enabled ? "https://${local.cognito_domain}/oauth2/authorize" : ""
+  cognito_token_endpoint         = local.cognito_domain_enabled ? "https://${local.cognito_domain}/oauth2/token" : ""
+  cognito_userinfo_endpoint      = local.cognito_domain_enabled ? "https://${local.cognito_domain}/oauth2/userInfo" : ""
+  oauth_issuer                   = trimspace(var.oauth_issuer) != "" ? var.oauth_issuer : local.jwt_issuer
+  oauth_jwks_uri = (
+    trimspace(var.oauth_jwks_uri) != ""
+    ? var.oauth_jwks_uri
+    : "${local.oauth_issuer}/.well-known/jwks.json"
+  )
+  oauth_authorization_endpoint = (
+    trimspace(var.oauth_authorization_endpoint) != ""
+    ? var.oauth_authorization_endpoint
+    : local.cognito_authorization_endpoint
+  )
+  oauth_token_endpoint = (
+    trimspace(var.oauth_token_endpoint) != ""
+    ? var.oauth_token_endpoint
+    : local.cognito_token_endpoint
+  )
+  oauth_userinfo_endpoint = (
+    trimspace(var.oauth_userinfo_endpoint) != ""
+    ? var.oauth_userinfo_endpoint
+    : local.cognito_userinfo_endpoint
+  )
+  oauth_registration_endpoint = (
+    trimspace(var.oauth_registration_endpoint) != ""
+    ? var.oauth_registration_endpoint
+    : var.enable_dcr_proxy
+    ? "${local.mcp_base_url}oauth/register"
+    : ""
+  )
+  oauth_resource = trimspace(var.oauth_resource) != "" ? var.oauth_resource : local.mcp_base_url
+  oauth_scopes   = length(var.oauth_scopes) > 0 ? var.oauth_scopes : ["openid", "email", "profile"]
   api_access_log_format = jsonencode(
     {
       requestId          = "$context.requestId"
@@ -90,6 +127,21 @@ data "aws_iam_policy_document" "append_memory_s3_policy" {
       aws_s3_bucket.memory.arn,
     ]
   }
+
+  dynamic "statement" {
+    for_each = var.create_cognito_user_pool && var.enable_dcr_proxy ? [1] : []
+    content {
+      sid    = "AllowCognitoClientRegistration"
+      effect = "Allow"
+      actions = [
+        "cognito-idp:CreateUserPoolClient",
+        "cognito-idp:DescribeUserPoolClient",
+        "cognito-idp:ListUserPoolClients",
+        "cognito-idp:DescribeUserPool",
+      ]
+      resources = [aws_cognito_user_pool.mcp[0].arn]
+    }
+  }
 }
 
 resource "aws_iam_role_policy" "append_memory_s3" {
@@ -137,7 +189,19 @@ resource "aws_lambda_function" "append_memory" {
 
   environment {
     variables = {
-      MEMORY_BUCKET_NAME = aws_s3_bucket.memory.bucket
+      MEMORY_BUCKET_NAME                = aws_s3_bucket.memory.bucket
+      OAUTH_ISSUER                      = local.oauth_issuer
+      OAUTH_JWKS_URI                    = local.oauth_jwks_uri
+      OAUTH_AUTHORIZATION_ENDPOINT      = local.oauth_authorization_endpoint
+      OAUTH_TOKEN_ENDPOINT              = local.oauth_token_endpoint
+      OAUTH_USERINFO_ENDPOINT           = local.oauth_userinfo_endpoint
+      OAUTH_REGISTRATION_ENDPOINT       = local.oauth_registration_endpoint
+      OAUTH_RESOURCE                    = local.oauth_resource
+      OAUTH_SCOPES                      = join(" ", local.oauth_scopes)
+      OAUTH_ALLOWED_REDIRECT_URI_EXACT  = join(",", var.oauth_allowed_redirect_uri_exact)
+      OAUTH_ALLOWED_REDIRECT_URI_PREFIX = join(",", var.oauth_allowed_redirect_uri_prefixes)
+      ENABLE_DCR_PROXY                  = var.enable_dcr_proxy ? "true" : "false"
+      COGNITO_USER_POOL_ID              = try(aws_cognito_user_pool.mcp[0].id, "")
     }
   }
 
@@ -191,6 +255,32 @@ resource "aws_apigatewayv2_route" "append_memory" {
   )
 }
 
+resource "aws_apigatewayv2_route" "oauth_protected_resource" {
+  api_id    = aws_apigatewayv2_api.memory_ingress.id
+  route_key = "GET /.well-known/oauth-protected-resource"
+  target    = "integrations/${aws_apigatewayv2_integration.append_memory.id}"
+
+  authorization_type = "NONE"
+}
+
+resource "aws_apigatewayv2_route" "oauth_authorization_server" {
+  api_id    = aws_apigatewayv2_api.memory_ingress.id
+  route_key = "GET /.well-known/oauth-authorization-server"
+  target    = "integrations/${aws_apigatewayv2_integration.append_memory.id}"
+
+  authorization_type = "NONE"
+}
+
+resource "aws_apigatewayv2_route" "oauth_register" {
+  count = var.enable_dcr_proxy ? 1 : 0
+
+  api_id    = aws_apigatewayv2_api.memory_ingress.id
+  route_key = "POST /oauth/register"
+  target    = "integrations/${aws_apigatewayv2_integration.append_memory.id}"
+
+  authorization_type = "NONE"
+}
+
 resource "aws_apigatewayv2_stage" "this" {
   api_id      = aws_apigatewayv2_api.memory_ingress.id
   name        = var.stage_name
@@ -241,6 +331,13 @@ resource "aws_cognito_user_pool" "mcp" {
   }
 }
 
+resource "aws_cognito_user_pool_domain" "mcp" {
+  count = local.cognito_domain_enabled ? 1 : 0
+
+  domain       = var.cognito_domain_prefix
+  user_pool_id = aws_cognito_user_pool.mcp[0].id
+}
+
 resource "aws_cognito_user_pool_client" "mcp" {
   count = var.create_cognito_user_pool ? 1 : 0
 
@@ -254,6 +351,13 @@ resource "aws_cognito_user_pool_client" "mcp" {
     "ALLOW_USER_PASSWORD_AUTH",
     "ALLOW_REFRESH_TOKEN_AUTH",
   ]
+
+  allowed_oauth_flows_user_pool_client = length(var.oauth_callback_urls) > 0
+  allowed_oauth_flows                  = length(var.oauth_callback_urls) > 0 ? ["code"] : null
+  allowed_oauth_scopes                 = length(var.oauth_callback_urls) > 0 ? local.oauth_scopes : null
+  callback_urls                        = length(var.oauth_callback_urls) > 0 ? var.oauth_callback_urls : null
+  logout_urls                          = length(var.oauth_logout_urls) > 0 ? var.oauth_logout_urls : null
+  supported_identity_providers         = length(var.oauth_callback_urls) > 0 ? ["COGNITO"] : null
 }
 
 data "aws_iam_policy_document" "caller_invoke_api" {

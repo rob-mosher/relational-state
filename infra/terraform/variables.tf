@@ -103,6 +103,107 @@ variable "cognito_user_pool_client_name" {
   default     = "relational-state-mcp-client"
 }
 
+variable "cognito_domain_prefix" {
+  description = "Cognito Hosted UI domain prefix (required for OAuth flows)."
+  type        = string
+  default     = ""
+
+  validation {
+    condition = (
+      !var.create_cognito_user_pool
+      || (
+        length(var.oauth_callback_urls) == 0
+        && !var.enable_dcr_proxy
+      )
+      || trimspace(var.cognito_domain_prefix) != ""
+    )
+    error_message = "cognito_domain_prefix must be set when Cognito OAuth flows are enabled."
+  }
+}
+
+variable "oauth_callback_urls" {
+  description = "Allowed OAuth callback URLs for Cognito Hosted UI (authorization code + PKCE)."
+  type        = list(string)
+  default     = []
+}
+
+variable "oauth_logout_urls" {
+  description = "Allowed OAuth logout URLs for Cognito Hosted UI."
+  type        = list(string)
+  default     = []
+}
+
+variable "oauth_scopes" {
+  description = "OAuth scopes to allow for the MCP client."
+  type        = list(string)
+  default     = ["openid", "email", "profile"]
+}
+
+variable "enable_dcr_proxy" {
+  description = "Whether to expose a lightweight DCR proxy endpoint backed by Cognito."
+  type        = bool
+  default     = false
+
+  validation {
+    condition     = !var.enable_dcr_proxy || var.create_cognito_user_pool
+    error_message = "enable_dcr_proxy requires create_cognito_user_pool = true."
+  }
+}
+
+variable "oauth_allowed_redirect_uri_exact" {
+  description = "Exact redirect URIs permitted by the DCR proxy."
+  type        = list(string)
+  default     = []
+}
+
+variable "oauth_allowed_redirect_uri_prefixes" {
+  description = "Redirect URI prefixes permitted by the DCR proxy."
+  type        = list(string)
+  default     = []
+}
+
+variable "oauth_resource" {
+  description = "Optional OAuth resource identifier (defaults to MCP base URL)."
+  type        = string
+  default     = ""
+}
+
+variable "oauth_issuer" {
+  description = "OAuth issuer override (defaults to Cognito issuer when created)."
+  type        = string
+  default     = ""
+}
+
+variable "oauth_authorization_endpoint" {
+  description = "OAuth authorization endpoint override."
+  type        = string
+  default     = ""
+}
+
+variable "oauth_token_endpoint" {
+  description = "OAuth token endpoint override."
+  type        = string
+  default     = ""
+}
+
+variable "oauth_userinfo_endpoint" {
+  description = "OAuth userinfo endpoint override."
+  type        = string
+  default     = ""
+}
+
+variable "oauth_jwks_uri" {
+  description = "OAuth JWKS endpoint override."
+  type        = string
+  default     = ""
+}
+
+variable "oauth_registration_endpoint" {
+  description = "OAuth dynamic client registration endpoint override."
+  type        = string
+  default     = ""
+}
+
 variable "jwt_issuer" {
   description = "JWT issuer URL (used when api_authorization_type = JWT and not creating a Cognito pool)."
   type        = string

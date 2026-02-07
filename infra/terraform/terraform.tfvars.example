@@ -41,9 +41,37 @@ api_authorization_type = "AWS_IAM"
 
 # Cognito-backed JWT auth (recommended for MCP clients that use bearer tokens).
 # When enabled, Terraform creates a User Pool + app client and wires API Gateway JWT auth.
-create_cognito_user_pool       = false
-cognito_user_pool_name         = "relational-state-mcp"
-cognito_user_pool_client_name  = "relational-state-mcp-client"
+create_cognito_user_pool      = false
+cognito_user_pool_name        = "relational-state-mcp"
+cognito_user_pool_client_name = "relational-state-mcp-client"
+
+# Cognito Hosted UI domain prefix (required for OAuth authorization code flow).
+# Example: relational-state-mcp-auth
+cognito_domain_prefix = ""
+
+# OAuth callback URLs for Cognito Hosted UI.
+# Claude UI callbacks:
+# https://claude.ai/api/mcp/auth_callback
+# https://claude.com/api/mcp/auth_callback
+# Claude Code / MCP Inspector callbacks:
+# http://localhost:6274/oauth/callback
+# http://localhost:6274/oauth/callback/debug
+oauth_callback_urls = []
+
+# OAuth logout URLs for Cognito Hosted UI.
+oauth_logout_urls = []
+
+# Enable a lightweight DCR proxy for clients that require dynamic registration.
+enable_dcr_proxy = false
+
+# Exact redirect URIs permitted by the DCR proxy.
+oauth_allowed_redirect_uri_exact = []
+
+# Redirect URI prefixes permitted by the DCR proxy.
+# Example ChatGPT callbacks:
+# https://chat.openai.com/aip/
+# https://chatgpt.com/aip/
+oauth_allowed_redirect_uri_prefixes = []
 
 # If you disable create_cognito_user_pool but keep api_authorization_type = "JWT",
 # provide your own issuer and audience list.

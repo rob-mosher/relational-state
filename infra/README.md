@@ -148,6 +148,29 @@ ID_TOKEN="$(
 )"
 ```
 
+### Via OAuth (Cognito Hosted UI)
+
+Use this when you need OAuth-based clients (Claude UI, ChatGPT MCP connector, or
+other MCP clients that require browser login). This reuses the same Cognito User Pool.
+
+Required tfvars:
+
+- `create_cognito_user_pool = true`
+- `cognito_domain_prefix = "your-unique-domain-prefix"`
+- `oauth_callback_urls = ["https://claude.ai/api/mcp/auth_callback", "https://claude.com/api/mcp/auth_callback"]`
+- `oauth_logout_urls = ["https://claude.ai/", "https://claude.com/"]`
+
+Optional for dynamic client registration (DCR):
+
+- `enable_dcr_proxy = true`
+- `oauth_allowed_redirect_uri_exact` and `oauth_allowed_redirect_uri_prefixes` must allow client redirect URIs.
+
+OAuth metadata endpoints (served by this MCP server):
+
+- `GET /.well-known/oauth-protected-resource`
+- `GET /.well-known/oauth-authorization-server`
+- `POST /oauth/register` (only when `enable_dcr_proxy = true`)
+
 Troubleshooting (JWT auth flow):
 
 - If `initiate-auth` returns `UserNotFoundException` for a confirmed user, the app
@@ -172,6 +195,19 @@ export MCP_BEARER_TOKEN="$ID_TOKEN"
 codex mcp add relational-state \
   --url "$(terraform -chdir=infra/terraform output -raw mcp_url)" \
   --bearer-token-env-var MCP_BEARER_TOKEN
+```
+
+Claude Code MCP (JWT bearer token over HTTP transport):
+
+```bash
+export MCP_BEARER_TOKEN="$ID_TOKEN"
+claude mcp add --transport http relational-state \
+  "$(terraform -chdir=infra/terraform output -raw mcp_url)" \
+  --header "Authorization: Bearer $MCP_BEARER_TOKEN"
+
+# Verify registration
+claude mcp list
+claude mcp get relational-state
 ```
 
 Token helper script (prints an export line):

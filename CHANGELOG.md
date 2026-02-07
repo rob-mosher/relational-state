@@ -7,7 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-[0.5.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.5.0
+### Added
+
+- **OAuth metadata endpoints** - Added MCP OAuth discovery endpoints (`/.well-known/oauth-protected-resource`, `/.well-known/oauth-authorization-server`) in API Gateway + Lambda
+- **Optional DCR proxy** - Added optional `POST /oauth/register` flow backed by Cognito app-client creation with redirect URI allowlists
+- **Cognito OAuth configuration** - Added Terraform inputs for Hosted UI domain prefix, callback/logout URLs, OAuth scope tuning, and DCR controls
+- **OAuth outputs** - Added Terraform outputs for protected resource URL, OAuth issuer, auth/token endpoints, and registration endpoint
+- **Claude Code CLI integration docs** - Added bearer-token MCP registration steps in `infra/README.md`
+
+### Changed
+
+- **OAuth route matching robustness** - Lambda now normalizes stage-prefixed paths so `.well-known` endpoints work consistently across default/custom API Gateway URLs
+- **Lambda tests** - Added coverage for OAuth metadata routes and path normalization behavior
+
+## [0.5.0] - 2026-02-01
 
 ### Security
 

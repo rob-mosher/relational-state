@@ -20,6 +20,18 @@ mcp_server = importlib.import_module("infra.lambda.mcp_server.handler")
 @pytest.fixture(autouse=True)
 def clear_bucket_env() -> None:
     os.environ.pop(mcp_server.MEMORY_BUCKET_ENV, None)
+    os.environ.pop(mcp_server.OAUTH_ISSUER_ENV, None)
+    os.environ.pop(mcp_server.OAUTH_AUTHORIZATION_ENDPOINT_ENV, None)
+    os.environ.pop(mcp_server.OAUTH_TOKEN_ENDPOINT_ENV, None)
+    os.environ.pop(mcp_server.OAUTH_USERINFO_ENDPOINT_ENV, None)
+    os.environ.pop(mcp_server.OAUTH_JWKS_URI_ENV, None)
+    os.environ.pop(mcp_server.OAUTH_REGISTRATION_ENDPOINT_ENV, None)
+    os.environ.pop(mcp_server.OAUTH_RESOURCE_ENV, None)
+    os.environ.pop(mcp_server.OAUTH_SCOPES_ENV, None)
+    os.environ.pop(mcp_server.OAUTH_ALLOWED_REDIRECT_URI_EXACT_ENV, None)
+    os.environ.pop(mcp_server.OAUTH_ALLOWED_REDIRECT_URI_PREFIX_ENV, None)
+    os.environ.pop(mcp_server.ENABLE_DCR_PROXY_ENV, None)
+    os.environ.pop(mcp_server.COGNITO_USER_POOL_ID_ENV, None)
 
 
 def test_prepare_memory_record_builds_expected_shape() -> None:
@@ -304,3 +316,46 @@ def test_handler_returns_error_when_s3_write_fails(monkeypatch: pytest.MonkeyPat
     assert response["statusCode"] == 500
     body = json.loads(response["body"])
     assert body == {"status": "error", "error": "Failed to write memory to S3."}
+
+
+def test_oauth_protected_resource_route_from_raw_path() -> None:
+    os.environ[mcp_server.OAUTH_ISSUER_ENV] = "https://issuer.example.com"
+    os.environ[mcp_server.OAUTH_RESOURCE_ENV] = "https://mcp.example.com/"
+    os.environ[mcp_server.OAUTH_JWKS_URI_ENV] = "https://issuer.example.com/jwks"
+    os.environ[mcp_server.OAUTH_SCOPES_ENV] = "openid profile"
+
+    event = {
+        "rawPath": "/.well-known/oauth-protected-resource",
+        "requestContext": {"http": {"method": "GET"}, "stage": "dev"},
+    }
+
+    response = mcp_server.handler(event, None)
+    assert response["statusCode"] == 200
+    body = json.loads(response["body"])
+    assert body["resource"] == "https://mcp.example.com/"
+    assert body["authorization_servers"] == ["https://issuer.example.com"]
+    assert body["scopes_supported"] == ["openid", "profile"]
+
+
+def test_oauth_authorization_server_route_with_stage_prefixed_path() -> None:
+    os.environ[mcp_server.OAUTH_ISSUER_ENV] = "https://issuer.example.com"
+    os.environ[mcp_server.OAUTH_AUTHORIZATION_ENDPOINT_ENV] = (
+        "https://issuer.example.com/oauth2/authorize"
+    )
+    os.environ[mcp_server.OAUTH_TOKEN_ENDPOINT_ENV] = (
+        "https://issuer.example.com/oauth2/token"
+    )
+
+    event = {
+        "requestContext": {
+            "http": {"method": "GET", "path": "/dev/.well-known/oauth-authorization-server"},
+            "stage": "dev",
+        },
+    }
+
+    response = mcp_server.handler(event, None)
+    assert response["statusCode"] == 200
+    body = json.loads(response["body"])
+    assert body["issuer"] == "https://issuer.example.com"
+    assert body["authorization_endpoint"] == "https://issuer.example.com/oauth2/authorize"
+    assert body["token_endpoint"] == "https://issuer.example.com/oauth2/token"
