@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Claude Code MCP registration docs** - Documented both per-project (local scope) and global (user scope) registration options in `infra/README.md`
+- **OAuth setup guide** - Added comprehensive step-by-step guide for connecting Claude.ai web via OAuth 2.0 with Cognito Hosted UI in `infra/README.md`
 
 ## [0.6.0] - 2026-02-07
 

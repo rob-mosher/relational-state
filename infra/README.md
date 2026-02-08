@@ -153,23 +153,109 @@ ID_TOKEN="$(
 Use this when you need OAuth-based clients (Claude UI, ChatGPT MCP connector, or
 other MCP clients that require browser login). This reuses the same Cognito User Pool.
 
-Required tfvars:
+This MCP server implements OAuth 2.0 discovery endpoints, so clients can
+automatically discover and configure authentication. The server supports both
+static client registration (via Cognito console or Terraform) and optional
+dynamic client registration (DCR).
 
-- `create_cognito_user_pool = true`
-- `cognito_domain_prefix = "your-unique-domain-prefix"`
-- `oauth_callback_urls = ["https://claude.ai/api/mcp/auth_callback", "https://claude.com/api/mcp/auth_callback"]`
-- `oauth_logout_urls = ["https://claude.ai/", "https://claude.com/"]`
+#### Setup for Claude.ai Web
 
-Optional for dynamic client registration (DCR):
+1. **Update your `terraform.tfvars`** with these OAuth settings:
 
-- `enable_dcr_proxy = true`
-- `oauth_allowed_redirect_uri_exact` and `oauth_allowed_redirect_uri_prefixes` must allow client redirect URIs.
+```hcl
+# Switch to JWT auth (required for OAuth)
+api_authorization_type = "JWT"
 
-OAuth metadata endpoints (served by this MCP server):
+# Enable Cognito User Pool
+create_cognito_user_pool      = true
+cognito_user_pool_name        = "relational-state-mcp"
+cognito_user_pool_client_name = "relational-state-mcp-client"
+
+# Set a globally unique domain prefix
+cognito_domain_prefix = "relational-state-mcp-yourname"
+
+# Add Claude.ai callback URLs
+oauth_callback_urls = [
+  "https://claude.ai/api/mcp/auth_callback",
+  "https://claude.com/api/mcp/auth_callback"
+]
+
+# Add Claude.ai logout URLs
+oauth_logout_urls = [
+  "https://claude.ai/",
+  "https://claude.com/"
+]
+
+# Optional: Enable dynamic client registration
+enable_dcr_proxy = true
+oauth_allowed_redirect_uri_exact = [
+  "https://claude.ai/api/mcp/auth_callback",
+  "https://claude.com/api/mcp/auth_callback"
+]
+```
+
+2. **Apply Terraform changes:**
+
+```bash
+terraform -chdir=infra/terraform plan -var-file="terraform.tfvars"
+terraform -chdir=infra/terraform apply -var-file="terraform.tfvars"
+```
+
+3. **Create a Cognito user** (for authentication):
+
+```bash
+POOL_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_id)"
+
+aws cognito-idp admin-create-user \
+  --user-pool-id "$POOL_ID" \
+  --username "your-email@example.com" \
+  --temporary-password 'TempPass#1234'
+
+aws cognito-idp admin-set-user-password \
+  --user-pool-id "$POOL_ID" \
+  --username "your-email@example.com" \
+  --password 'YourStrongPassword#1234' \
+  --permanent
+```
+
+4. **Get your MCP URL:**
+
+```bash
+terraform -chdir=infra/terraform output -raw mcp_url
+```
+
+5. **Connect Claude.ai:**
+
+   - Go to Settings → Integrations → MCP Servers in Claude.ai
+   - Add your MCP URL
+   - Claude.ai will discover OAuth endpoints automatically
+   - You'll be redirected to Cognito to log in
+   - After login, Claude.ai can access your MCP server
+
+#### How it works
+
+When Claude.ai connects:
+1. Fetches `/.well-known/oauth-protected-resource` to discover the OAuth server
+2. Fetches `/.well-known/oauth-authorization-server` for endpoint URLs
+3. Redirects you to Cognito Hosted UI for login
+4. Exchanges authorization code for tokens
+5. Uses JWT bearer tokens to call your MCP server
+
+#### OAuth metadata endpoints
+
+This MCP server exposes:
 
 - `GET /.well-known/oauth-protected-resource`
 - `GET /.well-known/oauth-authorization-server`
 - `POST /oauth/register` (only when `enable_dcr_proxy = true`)
+
+#### Dynamic Client Registration (DCR)
+
+If you enable `enable_dcr_proxy = true`, OAuth clients can register themselves
+dynamically. Configure allowed redirect URIs using:
+
+- `oauth_allowed_redirect_uri_exact` - exact URI matches
+- `oauth_allowed_redirect_uri_prefixes` - prefix matches (e.g., `https://chatgpt.com/aip/`)
 
 Troubleshooting (JWT auth flow):
 
