@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **API Gateway authorizer destroy ordering** - Added explicit `depends_on` to the `POST /` route so Terraform updates the route (clearing the authorizer reference) before destroying the JWT authorizer when switching away from JWT auth
+- **API Gateway authorizer destroy ordering** - Decoupled authorizer lifecycle from route auth type so the JWT authorizer persists whenever Cognito exists, avoiding the destroy-before-route-update race when toggling `api_authorization_type` away from JWT
 
 ### Changed
 

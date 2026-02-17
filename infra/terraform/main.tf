@@ -272,7 +272,12 @@ resource "aws_apigatewayv2_integration" "add_memory" {
 }
 
 resource "aws_apigatewayv2_authorizer" "jwt" {
-  count = var.api_authorization_type == "JWT" ? 1 : 0
+  # Keep the authorizer alive whenever its config source exists (Cognito pool
+  # or explicit jwt_issuer), not only when JWT auth is active on the route.
+  # This prevents a destroy-before-update race: API Gateway rejects deleting
+  # an authorizer still referenced by a route, and Terraform cannot guarantee
+  # it will update the route first when both change in one apply.
+  count = (var.create_cognito_user_pool || var.api_authorization_type == "JWT") ? 1 : 0
 
   api_id           = aws_apigatewayv2_api.memory_ingress.id
   name             = "${var.api_name}-jwt"
@@ -298,11 +303,6 @@ resource "aws_apigatewayv2_route" "add_memory" {
     ? var.jwt_authorization_scopes
     : null
   )
-
-  # Explicit dependency ensures Terraform updates this route (removing the
-  # authorizer reference) before it attempts to destroy the authorizer when
-  # switching away from JWT auth.  The ternary above drops the implicit edge.
-  depends_on = [aws_apigatewayv2_authorizer.jwt]
 }
 
 resource "aws_apigatewayv2_route" "oauth_protected_resource" {
