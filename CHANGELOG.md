@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **API Gateway authorizer destroy ordering** - Added explicit `depends_on` to the `POST /` route so Terraform updates the route (clearing the authorizer reference) before destroying the JWT authorizer when switching away from JWT auth
+
 ### Changed
 
 - **Claude Code MCP registration docs** - Documented both per-project (local scope) and global (user scope) registration options in `infra/README.md`

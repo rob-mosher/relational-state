@@ -298,6 +298,11 @@ resource "aws_apigatewayv2_route" "add_memory" {
     ? var.jwt_authorization_scopes
     : null
   )
+
+  # Explicit dependency ensures Terraform updates this route (removing the
+  # authorizer reference) before it attempts to destroy the authorizer when
+  # switching away from JWT auth.  The ternary above drops the implicit edge.
+  depends_on = [aws_apigatewayv2_authorizer.jwt]
 }
 
 resource "aws_apigatewayv2_route" "oauth_protected_resource" {
