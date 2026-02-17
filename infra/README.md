@@ -109,7 +109,7 @@ URL="$(terraform -chdir=infra/terraform output -raw mcp_url)"
 curl --fail-with-body \
   --aws-sigv4 "aws:amz:${AWS_REGION}:execute-api" \
   -H "content-type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"add_memory","arguments":{"entity_id":"rob","domain":"relational-state","content":"Testing add_memory via IAM."}}}' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"add_memory","arguments":{"entity_id":"rob","topic":"relational-state","content":"Testing add_memory via IAM."}}}' \
   "$URL"
 ```
 
@@ -375,15 +375,15 @@ The MCP server exposes four tools:
 
 - `add_memory`
 - `get_README`
-- `list_domains`
-- `list_entities_within_domain`
+- `list_topics`
+- `list_entities_within_topic`
 
 ### add_memory: Request Body
 
 ```json
 {
   "entity_id": "string",
-  "domain": "string",
+  "topic": "string",
   "content": "string",
   "metadata": {
     "tags": ["string"],
@@ -425,13 +425,13 @@ the current open-development posture, and the long-term consent goals.
 It also includes brief journaling guidance (context, reflections, optional
 open questions).
 
-### list_domains
+### list_topics
 
-Returns the list of available memory domains found in S3.
+Returns the list of available memory topics found in S3.
 
-### list_entities_within_domain
+### list_entities_within_topic
 
-Returns the list of entity IDs within a given domain.
+Returns the list of entity IDs within a given topic.
 
 Optional:
 
@@ -448,7 +448,7 @@ Optional:
 Objects are written with lexicographically sortable keys:
 
 ```text
-memories/domain={domain}/entity={entity_id}/yyyy/mm/dd/{timestamp}_{uuid}.json
+memories/topic={topic}/entity={entity_id}/yyyy/mm/dd/{timestamp}_{uuid}.json
 ```
 
 This enables:

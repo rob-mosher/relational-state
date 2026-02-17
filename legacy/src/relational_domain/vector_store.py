@@ -19,30 +19,30 @@ from typing import List, Optional, Tuple
 import chromadb
 from chromadb.config import Settings
 
-from relational_domain.models import DomainConfig, Entry
+from relational_domain.models import TopicConfig, Entry
 from relational_domain.providers import ProviderRegistry, ProviderCapability
 
 
 class VectorStore:
     """
-    Vector Projection Store for relational domain memory.
-    
+    Vector Projection Store for relational topic memory.
+
     Uses provider registry for embedding compute with local-first fallback.
     """
 
     def __init__(
         self,
-        config: Optional[DomainConfig] = None,
+        config: Optional[TopicConfig] = None,
         provider_registry: Optional[ProviderRegistry] = None
     ):
         """
         Initialize vector store with provider abstraction.
 
         Args:
-            config: Domain configuration (defaults to DomainConfig.from_env())
+            config: Topic configuration (defaults to TopicConfig.from_env())
             provider_registry: Provider registry (defaults to new registry from config)
         """
-        self.config = config or DomainConfig.from_env()
+        self.config = config or TopicConfig.from_env()
 
         # Initialize provider registry
         if provider_registry is None:

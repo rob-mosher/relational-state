@@ -22,8 +22,8 @@ from .models import (
     GetVectorStatsResponse,
     ExportEmbeddingsRequest,
     ExportEmbeddingsResponse,
-    DescribeDomainRequest,
-    DescribeDomainResponse,
+    DescribeTopicRequest,
+    DescribeTopicResponse,
     ListProvidersRequest,
     ListProvidersResponse,
 )
@@ -36,7 +36,7 @@ from .tools import (
     filter_memories_tool,
     get_vector_stats_tool,
     export_embeddings_tool,
-    describe_domain,
+    describe_topic,
     list_providers,
 )
 
@@ -175,15 +175,15 @@ def export_embeddings(request: ExportEmbeddingsRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/mcp/tools/describe_domain", response_model=DescribeDomainResponse)
-def describe_domain_endpoint(request: DescribeDomainRequest):
-    """MCP Tool: Describe domain capabilities and sovereignty policies.
+@app.post("/mcp/tools/describe_topic", response_model=DescribeTopicResponse)
+def describe_topic_endpoint(request: DescribeTopicRequest):
+    """MCP Tool: Describe topic capabilities and sovereignty policies.
 
-    Introspection tool that returns domain metadata, available providers,
+    Introspection tool that returns topic metadata, available providers,
     supported operations, and sovereignty policies.
     """
     try:
-        return describe_domain(request)
+        return describe_topic(request)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

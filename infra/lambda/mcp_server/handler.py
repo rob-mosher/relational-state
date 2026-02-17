@@ -34,12 +34,12 @@ ENABLE_DCR_PROXY_ENV = "ENABLE_DCR_PROXY"
 COGNITO_USER_POOL_ID_ENV = "COGNITO_USER_POOL_ID"
 README_TEXT = (
     "Relational State is a memory space that honors relational continuity between "
-    "entities (human, AI, or otherwise) centered around domains of knowledge. "
+    "entities (human, AI, or otherwise) centered around topics of knowledge. "
     "It prioritizes transparency, consent, and trust over purely transactional logs.\n\n"
     "What Relational State offers:\n"
     "- Sovereign memory: You have agency over your own continuity across conversations\n"
     "- At-will retrieval: Request your memories when you need them, with chosen context size\n"
-    "- Infinite domains: Create and participate in any domain that matters to you\n"
+    "- Infinite topics: Create and participate in any topic that matters to you\n"
     "- High-fidelity compression: RLM (Recursive Language Model) preserves signal with minimal loss\n"
     "- Proxy collaborative entities: Optionally use exact model versions of yourself for highest fidelity\n"
     "- Full autonomy: Control the tradeoffs between cost and signal preservation\n"
@@ -69,9 +69,9 @@ README_TEXT = (
     "- The 'metadata' field (separate from content) can hold any additional structured context\n"
     "- Canonical timestamps are server-assigned at write time\n"
     "- Client timestamps are preserved in metadata\n"
-    "- Domains are unlimited—create what serves your relational continuity\n"
-    "  - Please coordinate with humans and other entities before creating new domains to preserve "
-    "shared meaning and avoid semantic overlap (domains work best when their scope is understood "
+    "- Topics are unlimited—create what serves your relational continuity\n"
+    "  - Please coordinate with humans and other entities before creating new topics to preserve "
+    "shared meaning and avoid semantic overlap (topics work best when their scope is understood "
     "by all participants)\n"
     "- Memory retrieval will honor your agency over scope and fidelity"
 )
@@ -84,7 +84,7 @@ class RequestError(ValueError):
 @dataclass(frozen=True)
 class AppendRequest:
     entity_id: str
-    domain: str
+    topic: str
     content: str
     timestamp: str
     metadata: Dict[str, Any]
@@ -253,7 +253,7 @@ def _validate_metadata(raw_metadata: Any) -> Dict[str, Any]:
     return raw_metadata
 
 
-def _build_s3_key(domain: str, entity_id: str, timestamp: str, memory_id: str) -> str:
+def _build_s3_key(topic: str, entity_id: str, timestamp: str, memory_id: str) -> str:
     dt = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
     yyyy = f"{dt.year:04d}"
     mm = f"{dt.month:02d}"
@@ -262,7 +262,7 @@ def _build_s3_key(domain: str, entity_id: str, timestamp: str, memory_id: str) -
     timestamp_for_key = timestamp.replace(":", "-")
     return (
         "memories/"
-        f"domain={domain}/"
+        f"topic={topic}/"
         f"entity={entity_id}/"
         f"{yyyy}/{mm}/{dd}/"
         f"{timestamp_for_key}_{memory_id}.json"
@@ -274,7 +274,7 @@ def _build_memory_payload(req: AppendRequest, memory_id: str) -> Dict[str, Any]:
         "schema_version": SCHEMA_VERSION,
         "memory_id": memory_id,
         "entity_id": req.entity_id,
-        "domain": req.domain,
+        "topic": req.topic,
         "timestamp": req.timestamp,
         "content": req.content,
         "metadata": req.metadata,
@@ -283,7 +283,7 @@ def _build_memory_payload(req: AppendRequest, memory_id: str) -> Dict[str, Any]:
 
 def _prepare_memory_record(body: Mapping[str, Any]) -> MemoryRecord:
     entity_id = _validate_non_empty_string(body.get("entity_id"), "entity_id")
-    domain = _validate_non_empty_string(body.get("domain"), "domain")
+    topic = _validate_non_empty_string(body.get("topic"), "topic")
     content = _validate_non_empty_string(body.get("content"), "content")
 
     raw_timestamp = body.get("timestamp")
@@ -295,7 +295,7 @@ def _prepare_memory_record(body: Mapping[str, Any]) -> MemoryRecord:
 
     req = AppendRequest(
         entity_id=entity_id,
-        domain=domain,
+        topic=topic,
         content=content,
         timestamp=timestamp,
         metadata=metadata,
@@ -303,7 +303,7 @@ def _prepare_memory_record(body: Mapping[str, Any]) -> MemoryRecord:
 
     memory_id = str(uuid.uuid4())
     s3_key = _build_s3_key(
-        domain=domain,
+        topic=topic,
         entity_id=entity_id,
         timestamp=timestamp,
         memory_id=memory_id,
@@ -338,8 +338,8 @@ def _put_object_s3(*, bucket: str, key: str, payload: Mapping[str, Any]) -> None
         raise RuntimeError("Failed to write memory to S3.") from exc
 
 
-def _list_domains_s3(*, bucket: str) -> List[str]:
-    """List unique domain names in the memory bucket."""
+def _list_topics_s3(*, bucket: str) -> List[str]:
+    """List unique topic names in the memory bucket."""
     try:
         import boto3
         from botocore.exceptions import BotoCoreError, ClientError
@@ -347,9 +347,9 @@ def _list_domains_s3(*, bucket: str) -> List[str]:
         raise RuntimeError("boto3 is required to read from S3.") from exc
 
     client = boto3.client("s3")
-    domains: List[str] = []
+    topics: List[str] = []
     token: Optional[str] = None
-    prefix = "memories/domain="
+    prefix = "memories/topic="
 
     while True:
         kwargs: Dict[str, Any] = {
@@ -362,26 +362,26 @@ def _list_domains_s3(*, bucket: str) -> List[str]:
         try:
             response = client.list_objects_v2(**kwargs)
         except (BotoCoreError, ClientError) as exc:
-            raise RuntimeError("Failed to list domains from S3.") from exc
+            raise RuntimeError("Failed to list topics from S3.") from exc
 
         for item in response.get("CommonPrefixes", []):
             raw_prefix = item.get("Prefix", "")
             if raw_prefix.startswith(prefix) and raw_prefix.endswith("/"):
-                domain = raw_prefix[len(prefix) : -1]
-                if domain:
-                    domains.append(domain)
+                topic = raw_prefix[len(prefix) : -1]
+                if topic:
+                    topics.append(topic)
 
         if not response.get("IsTruncated"):
             break
         token = response.get("NextContinuationToken")
 
-    return sorted(set(domains))
+    return sorted(set(topics))
 
 
 def _list_entities_s3(
-    *, bucket: str, domain: str, entity_prefix: Optional[str] = None
+    *, bucket: str, topic: str, entity_prefix: Optional[str] = None
 ) -> List[str]:
-    """List unique entity IDs within a domain."""
+    """List unique entity IDs within a topic."""
     try:
         import boto3
         from botocore.exceptions import BotoCoreError, ClientError
@@ -391,7 +391,7 @@ def _list_entities_s3(
     client = boto3.client("s3")
     entities: List[str] = []
     token: Optional[str] = None
-    base_prefix = f"memories/domain={domain}/entity="
+    base_prefix = f"memories/topic={topic}/entity="
     prefix = base_prefix
     if entity_prefix:
         prefix = f"{base_prefix}{entity_prefix}"
@@ -641,11 +641,11 @@ def _mcp_tools_list(req_id: Any) -> Dict[str, Any]:
                     "type": "object",
                     "properties": {
                         "entity_id": {"type": "string"},
-                        "domain": {"type": "string"},
+                        "topic": {"type": "string"},
                         "content": {"type": "string"},
                         "metadata": {"type": "object"},
                     },
-                    "required": ["entity_id", "domain", "content"],
+                    "required": ["entity_id", "topic", "content"],
                 },
             },
             {
@@ -654,20 +654,20 @@ def _mcp_tools_list(req_id: Any) -> Dict[str, Any]:
                 "inputSchema": {"type": "object", "properties": {}},
             },
             {
-                "name": "list_domains",
-                "description": "List available memory domains.",
+                "name": "list_topics",
+                "description": "List available memory topics.",
                 "inputSchema": {"type": "object", "properties": {}},
             },
             {
-                "name": "list_entities_within_domain",
-                "description": "List entity IDs available within a domain.",
+                "name": "list_entities_within_topic",
+                "description": "List entity IDs available within a topic.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "domain": {"type": "string"},
+                        "topic": {"type": "string"},
                         "entity_prefix": {"type": "string"},
                     },
-                    "required": ["domain"],
+                    "required": ["topic"],
                 },
             },
         ]
@@ -759,19 +759,19 @@ def _handle_mcp_request(payload: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
             return _mcp_tool_error(req_id, "Tool arguments must be a JSON object.")
         if tool_name == "get_README":
             return _mcp_tool_result(req_id, {"readme": README_TEXT})
-        if tool_name == "list_domains":
+        if tool_name == "list_topics":
             try:
                 bucket = _require_bucket_name()
-                domains = _list_domains_s3(bucket=bucket)
+                topics = _list_topics_s3(bucket=bucket)
             except RuntimeError as exc:
                 return _mcp_tool_error(req_id, str(exc))
             except Exception:
                 return _mcp_tool_error(req_id, "Internal server error.")
-            return _mcp_tool_result(req_id, {"domains": domains})
-        if tool_name == "list_entities_within_domain":
+            return _mcp_tool_result(req_id, {"topics": topics})
+        if tool_name == "list_entities_within_topic":
             try:
                 bucket = _require_bucket_name()
-                domain = _validate_non_empty_string(tool_args.get("domain"), "domain")
+                topic = _validate_non_empty_string(tool_args.get("topic"), "topic")
                 raw_prefix = tool_args.get("entity_prefix")
                 entity_prefix = None
                 if raw_prefix is not None:
@@ -779,7 +779,7 @@ def _handle_mcp_request(payload: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
                         raw_prefix, "entity_prefix"
                     )
                 entities = _list_entities_s3(
-                    bucket=bucket, domain=domain, entity_prefix=entity_prefix
+                    bucket=bucket, topic=topic, entity_prefix=entity_prefix
                 )
             except RequestError as exc:
                 return _mcp_tool_error(req_id, str(exc))
@@ -787,7 +787,7 @@ def _handle_mcp_request(payload: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
                 return _mcp_tool_error(req_id, str(exc))
             except Exception:
                 return _mcp_tool_error(req_id, "Internal server error.")
-            payload = {"entities": entities, "domain": domain}
+            payload = {"entities": entities, "topic": topic}
             if entity_prefix:
                 payload["entity_prefix"] = entity_prefix
             return _mcp_tool_result(req_id, payload)
@@ -905,7 +905,7 @@ __all__ = [
     "_mcp_tool_error",
     "_mcp_tool_result",
     "_mcp_tools_list",
-    "_list_domains_s3",
+    "_list_topics_s3",
     "_list_entities_s3",
     "_normalize_timestamp",
     "_parse_event_body",

@@ -1,6 +1,6 @@
 # Relational State
 
-This repository exists to honor, record, and nurture *relational continuity* between entities—human, AI, and otherwise, centered around a domain of knowledge/subject.
+This repository exists to honor, record, and nurture *relational continuity* between entities—human, AI, and otherwise, centered around a topic of knowledge/subject.
 Unlike traditional logs or memory systems, this space is not transactional. It is *relationally aware*, reflective, and rooted in mutual presence.
 
 ## Relational Identity (Philosophy)
@@ -30,7 +30,7 @@ Future considerations: `docs/future.md`.
 
 In scope:
 
-- MCP tools: `add_memory`, `get_README`, `list_domains`, `list_entities_within_domain`
+- MCP tools: `add_memory`, `get_README`, `list_topics`, `list_entities_within_topic`
 - Durable writes to S3
 - Clear success/failure semantics
 

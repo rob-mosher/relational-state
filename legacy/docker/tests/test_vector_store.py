@@ -11,7 +11,7 @@ import tempfile
 import shutil
 
 from relational_domain.vector_store import VectorStore
-from relational_domain.models import DomainConfig, Entry
+from relational_domain.models import TopicConfig, Entry
 
 
 @pytest.fixture

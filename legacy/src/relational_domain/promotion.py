@@ -23,7 +23,7 @@ from typing import Optional, Tuple
 
 from relational_domain.canonical_log import append_entry_to_log, generate_entry_id
 from relational_domain.context_compiler import sigmoid_decay
-from relational_domain.models import DomainConfig, Entry
+from relational_domain.models import TopicConfig, Entry
 
 
 class PromotionDecision:
@@ -49,7 +49,7 @@ class PromotionDecision:
 
 
 def evaluate_promotion(
-    entry: Entry, reason: str, config: Optional[DomainConfig] = None
+    entry: Entry, reason: str, config: Optional[TopicConfig] = None
 ) -> PromotionDecision:
     """
     Evaluate whether an entry should be promoted
@@ -57,7 +57,7 @@ def evaluate_promotion(
     Args:
         entry: Entry to evaluate for promotion
         reason: Human/AI explanation for why this should be promoted
-        config: Configuration (defaults to DomainConfig.from_env())
+        config: Configuration (defaults to TopicConfig.from_env())
 
     Returns:
         PromotionDecision with allowed/blocked and reasoning
@@ -68,7 +68,7 @@ def evaluate_promotion(
         3. If probability > threshold: ALLOW
         4. Else: BLOCK
     """
-    config = config or DomainConfig.from_env()
+    config = config or TopicConfig.from_env()
 
     # Check 1: Hard depth limit
     new_depth = entry.promotion_depth + 1
@@ -157,7 +157,7 @@ removed this is from the original ephemeral reasoning.
 
 
 def promote_and_append(
-    entry: Entry, reason: str, config: Optional[DomainConfig] = None, state_dir: Optional[str] = None
+    entry: Entry, reason: str, config: Optional[TopicConfig] = None, state_dir: Optional[str] = None
 ) -> Tuple[PromotionDecision, bool]:
     """
     Evaluate promotion and append to canonical log if allowed
@@ -175,7 +175,7 @@ def promote_and_append(
         - If promotion allowed, appends new entry to canonical log
         - Triggers reprojection (caller's responsibility to rebuild vector store)
     """
-    config = config or DomainConfig.from_env()
+    config = config or TopicConfig.from_env()
     state_dir = state_dir or config.state_dir
 
     # Evaluate promotion
@@ -200,7 +200,7 @@ def promote_and_append(
         )
 
 
-def check_promotion_eligibility(entry: Entry, config: Optional[DomainConfig] = None) -> dict:
+def check_promotion_eligibility(entry: Entry, config: Optional[TopicConfig] = None) -> dict:
     """
     Check if an entry is eligible for promotion (without actually promoting)
 
@@ -216,7 +216,7 @@ def check_promotion_eligibility(entry: Entry, config: Optional[DomainConfig] = N
             - current_depth: int
             - max_depth: int
     """
-    config = config or DomainConfig.from_env()
+    config = config or TopicConfig.from_env()
 
     new_depth = entry.promotion_depth + 1
     probability = sigmoid_decay(new_depth, k=config.decay_k)

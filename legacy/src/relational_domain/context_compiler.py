@@ -18,7 +18,7 @@ from typing import List, Optional
 
 import tiktoken
 
-from relational_domain.models import DomainConfig, ContextEnvelope, ContextEntry, Entry
+from relational_domain.models import TopicConfig, ContextEnvelope, ContextEntry, Entry
 from relational_domain.vector_store import VectorStore
 
 
@@ -93,16 +93,16 @@ class ContextCompiler:
         - Generate Context Envelope
     """
 
-    def __init__(self, vector_store: VectorStore, config: Optional[DomainConfig] = None):
+    def __init__(self, vector_store: VectorStore, config: Optional[TopicConfig] = None):
         """
         Initialize context compiler
 
         Args:
             vector_store: VectorStore instance for querying
-            config: Configuration (defaults to DomainConfig.from_env())
+            config: Configuration (defaults to TopicConfig.from_env())
         """
         self.vector_store = vector_store
-        self.config = config or DomainConfig.from_env()
+        self.config = config or TopicConfig.from_env()
 
     def compile_context(
         self,

@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Rename `domain` → `topic` throughout** - The term "domain" was overloaded with technical connotations; "topic" more clearly expresses "what this memory is about." Affects MCP tool names (`list_domains` → `list_topics`, `list_entities_within_domain` → `list_entities_within_topic`), the `add_memory` field (`domain` → `topic`), S3 key prefix (`domain=` → `topic=`), all internal function names, and documentation. Existing S3 data requires manual migration.
 - **Claude Code MCP registration docs** - Documented both per-project (local scope) and global (user scope) registration options in `infra/README.md`
 - **OAuth setup guide** - Added comprehensive step-by-step guide for connecting Claude.ai web via OAuth 2.0 with Cognito Hosted UI in `infra/README.md`
 

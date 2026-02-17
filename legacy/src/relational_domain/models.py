@@ -5,7 +5,7 @@ Defines the core data structures using Pydantic for validation:
 - Entry: Canonical memory entry (unchanged from engine)
 - ContextEntry: Entry with relevance scores (for Context Envelope)
 - ContextEnvelope: Output with provider metadata
-- DomainConfig: Domain sovereignty policies and compute preferences
+- TopicConfig: Topic sovereignty policies and compute preferences
 """
 
 import os
@@ -79,8 +79,8 @@ class ContextEntry(BaseModel):
 
 class ContextEnvelope(BaseModel):
     """
-    Output from domain context compilation with provider transparency.
-    
+    Output from topic context compilation with provider transparency.
+
     Now includes provider_used to show which compute provider was negotiated.
     """
 
@@ -116,15 +116,15 @@ class ContextEnvelope(BaseModel):
         }
 
 
-class DomainConfig(BaseModel):
+class TopicConfig(BaseModel):
     """
-    Domain sovereignty configuration.
-    
-    Separates domain policies from provider-specific configuration.
+    Topic sovereignty configuration.
+
+    Separates topic policies from provider-specific configuration.
     Provider selection happens through ProviderRegistry, not here.
     """
 
-    # Paths (domain data sovereignty)
+    # Paths (topic data sovereignty)
     state_dir: str = Field(default=".relational/state/", description="Canonical log directory")
     vector_store_dir: str = Field(
         default=".relational/vector_store/", description="Vector projection storage"
@@ -144,7 +144,7 @@ class DomainConfig(BaseModel):
         default=None, description="OpenAI API key (from env or explicit)"
     )
 
-    # Context Compilation (domain policies)
+    # Context Compilation (topic policies)
     max_context_tokens: int = Field(
         default=2000, ge=100, description="Maximum tokens in Context Envelope"
     )
@@ -155,7 +155,7 @@ class DomainConfig(BaseModel):
         default=True, description="Only return entity's own memories (entity-specific sovereignty)"
     )
 
-    # Promotion (damped recursion, domain policy)
+    # Promotion (damped recursion, topic policy)
     max_promotion_depth: int = Field(default=3, ge=1, description="Hard limit on promotion levels")
     promotion_threshold: float = Field(
         default=0.3,
@@ -167,7 +167,7 @@ class DomainConfig(BaseModel):
         default=2.0, gt=0.0, description="Sigmoid steepness (higher = faster decay)"
     )
 
-    # Recency Bias (domain policy)
+    # Recency Bias (topic policy)
     recency_boost_days: int = Field(
         default=30, ge=0, description="Recent entries within N days get boost"
     )
@@ -175,13 +175,13 @@ class DomainConfig(BaseModel):
         default=1.2, ge=1.0, description="Multiplier for recent entries"
     )
 
-    # Trust (domain policy)
+    # Trust (topic policy)
     default_trust_weight: float = Field(
         default=1.0, ge=0.0, le=1.0, description="Default trust for new entries"
     )
 
     @classmethod
-    def from_env(cls) -> "DomainConfig":
+    def from_env(cls) -> "TopicConfig":
         """Load configuration with environment variable overrides"""
         config = cls()
 
@@ -210,5 +210,6 @@ class DomainConfig(BaseModel):
         }
 
 
-# Backward compatibility alias
-Config = DomainConfig
+# Backward compatibility aliases
+Config = TopicConfig
+DomainConfig = TopicConfig

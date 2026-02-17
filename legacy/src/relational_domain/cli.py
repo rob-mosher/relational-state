@@ -15,7 +15,7 @@ from pathlib import Path
 
 from relational_domain.canonical_log import load_canonical_log
 from relational_domain.context_compiler import ContextCompiler
-from relational_domain.models import DomainConfig
+from relational_domain.models import TopicConfig
 from relational_domain.promotion import promote_and_append, check_promotion_eligibility
 from relational_domain.vector_store import VectorStore
 
@@ -26,7 +26,7 @@ def cli(ctx):
     """Relational Domain - Entity-specific memory with provider abstraction"""
     # Initialize shared config
     ctx.ensure_object(dict)
-    ctx.obj["config"] = DomainConfig.from_env()
+    ctx.obj["config"] = TopicConfig.from_env()
 
 
 @cli.command()

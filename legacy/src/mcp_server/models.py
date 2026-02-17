@@ -169,15 +169,15 @@ class ExportEmbeddingsResponse(BaseModel):
     notes: str = Field(..., description="Usage notes for visualization")
 
 
-# Domain Introspection Tools (v0.6.0)
+# Topic Introspection Tools (v0.6.0)
 
-class DescribeDomainRequest(BaseModel):
-    """Request model for describe_domain introspection tool."""
+class DescribeTopicRequest(BaseModel):
+    """Request model for describe_topic introspection tool."""
     include_provider_status: bool = Field(default=True, description="Include current provider availability")
 
 
 class ProviderInfo(BaseModel):
-    """Provider information for describe_domain response."""
+    """Provider information for describe_topic response."""
     name: str
     type: str
     available: bool
@@ -186,9 +186,9 @@ class ProviderInfo(BaseModel):
     embedding_dimensions: Optional[int] = None
 
 
-class DescribeDomainResponse(BaseModel):
-    """Response model for describe_domain introspection tool."""
-    domain_version: str
+class DescribeTopicResponse(BaseModel):
+    """Response model for describe_topic introspection tool."""
+    topic_version: str
     sovereignty_policies: Dict[str, Any]
     available_operations: List[str]
     providers: List[ProviderInfo]

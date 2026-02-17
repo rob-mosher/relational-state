@@ -331,7 +331,7 @@ from relational_domain.context_compiler import ContextCompiler
 from relational_domain.models import Config
 
 # Initialize
-config = DomainConfig.from_env()
+config = TopicConfig.from_env()
 entries = load_canonical_log(config.state_dir)
 
 # Build vector store

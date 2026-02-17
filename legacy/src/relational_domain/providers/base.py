@@ -1,8 +1,8 @@
 """
 Provider abstraction layer for Relational Domain.
 
-Providers are sovereign compute capabilities that the domain can negotiate with.
-The domain declares what it needs; providers declare what they can do.
+Providers are sovereign compute capabilities that the topic can negotiate with.
+The topic declares what it needs; providers declare what they can do.
 """
 
 from abc import ABC, abstractmethod
@@ -12,7 +12,7 @@ from typing import Optional, Dict, Any, List
 
 
 class ProviderType(Enum):
-    """Types of compute providers the domain can work with."""
+    """Types of compute providers the topic can work with."""
     LOCAL = "local"
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
@@ -59,9 +59,9 @@ class ProviderInvocationResult:
 class Provider(ABC):
     """
     Abstract base class for compute providers.
-    
-    Providers are sovereign services that the domain can negotiate with.
-    They declare their capabilities and the domain decides whether to use them.
+
+    Providers are sovereign services that the topic can negotiate with.
+    They declare their capabilities and the topic decides whether to use them.
     """
     
     @abstractmethod

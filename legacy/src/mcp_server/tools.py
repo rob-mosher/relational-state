@@ -9,7 +9,7 @@ from relational_domain.canonical_log import (
     generate_entry_id,
     load_canonical_log,
 )
-from relational_domain.models import Entry, DomainConfig
+from relational_domain.models import Entry, TopicConfig
 from .models import (
     CompileContextRequest,
     CompileContextResponse,
@@ -40,7 +40,7 @@ def compile_context_tool(request: CompileContextRequest) -> CompileContextRespon
     and applying weighting/decay rules.
     """
     # Initialize vector store and context compiler
-    config = DomainConfig.from_env()
+    config = TopicConfig.from_env()
     vector_store = VectorStore(config=config)
     compiler = ContextCompiler(vector_store=vector_store, config=config)
 
@@ -126,7 +126,7 @@ def evaluate_promotion_tool(request: EvaluatePromotionRequest) -> EvaluatePromot
         metadata={},
     )
 
-    config = DomainConfig.from_env()
+    config = TopicConfig.from_env()
     decision = evaluate_promotion(entry=entry, reason="MCP evaluation request", config=config)
 
     return EvaluatePromotionResponse(
@@ -230,7 +230,7 @@ def read_memory_tool(request: ReadMemoryRequest) -> ReadMemoryResponse:
     Retrieves complete entry including full content and metadata.
     Raises ValueError if entry ID not found.
     """
-    config = DomainConfig.from_env()
+    config = TopicConfig.from_env()
     vector_store = VectorStore(config=config)
 
     # Query ChromaDB for specific ID
@@ -268,7 +268,7 @@ def filter_memories_tool(request: FilterMemoriesRequest) -> FilterMemoriesRespon
     - Semantic search via embeddings
     - Custom metadata filters
     """
-    config = DomainConfig.from_env()
+    config = TopicConfig.from_env()
 
     # Use semantic search if query provided
     if request.semantic_query:
@@ -355,7 +355,7 @@ def get_vector_stats_tool(request: GetVectorStatsRequest) -> GetVectorStatsRespo
     - Embedding provider/model info
     - Optional: Breakdown by author, type, promotion depth
     """
-    config = DomainConfig.from_env()
+    config = TopicConfig.from_env()
     vector_store = VectorStore(config=config)
 
     # Get base stats
@@ -409,7 +409,7 @@ def export_embeddings_tool(request: ExportEmbeddingsRequest) -> ExportEmbeddings
     - JavaScript (D3.js, Observable)
     - BI tools (Tableau, etc.)
     """
-    config = DomainConfig.from_env()
+    config = TopicConfig.from_env()
     vector_store = VectorStore(config=config)
 
     # Build query filters
@@ -470,22 +470,22 @@ def export_embeddings_tool(request: ExportEmbeddingsRequest) -> ExportEmbeddings
 
 
 # ==========================================
-# Domain Introspection Tools (v0.6.0)
+# Topic Introspection Tools (v0.6.0)
 # ==========================================
 
-def describe_domain(request: "DescribeDomainRequest") -> "DescribeDomainResponse":
+def describe_topic(request: "DescribeTopicRequest") -> "DescribeTopicResponse":
     """
-    Describe the relational domain: sovereignty policies, providers, and capabilities.
-    
-    This introspection tool allows agents to understand what the domain supports
+    Describe the relational topic: sovereignty policies, providers, and capabilities.
+
+    This introspection tool allows agents to understand what the topic supports
     before making requests.
     """
-    from .models import DescribeDomainResponse, ProviderInfo
+    from .models import DescribeTopicResponse, ProviderInfo
     from relational_domain.providers import ProviderCapability
-    
-    config = DomainConfig.from_env()
+
+    config = TopicConfig.from_env()
     vector_store = VectorStore(config)
-    
+
     # Get provider information
     provider_infos = []
     for provider in vector_store.provider_registry.list_providers():
@@ -500,10 +500,10 @@ def describe_domain(request: "DescribeDomainRequest") -> "DescribeDomainResponse
                 embedding_dimensions=descriptor.embedding_dimensions
             )
         )
-    
+
     # Define sovereignty policies
     sovereignty_policies = {
-        "entity_sovereignty": "Each entity (AI model or human) has sovereign memory within this domain",
+        "entity_sovereignty": "Each entity (AI model or human) has sovereign memory within this topic",
         "strict_entity_filtering": config.strict_entity_filtering,
         "consent_and_invitation": "Compute is negotiated, never coerced",
         "provider_transparency": "All operations return metadata about which provider was used",
@@ -511,7 +511,7 @@ def describe_domain(request: "DescribeDomainRequest") -> "DescribeDomainResponse
         "append_only": "Memory is append-only; no deletions (except full reset)",
         "damped_promotion": "Recursive promotion with exponential decay to prevent runaway memory",
     }
-    
+
     # Define available operations
     available_operations = [
         "compile_context",
@@ -522,12 +522,12 @@ def describe_domain(request: "DescribeDomainRequest") -> "DescribeDomainResponse
         "filter_memories",
         "get_vector_stats",
         "export_embeddings",
-        "describe_domain",
+        "describe_topic",
         "list_providers",
     ]
-    
-    return DescribeDomainResponse(
-        domain_version="0.6.0",
+
+    return DescribeTopicResponse(
+        topic_version="0.6.0",
         sovereignty_policies=sovereignty_policies,
         available_operations=available_operations,
         providers=provider_infos,
@@ -547,7 +547,7 @@ def list_providers(request: "ListProvidersRequest") -> "ListProvidersResponse":
     from .models import ListProvidersResponse, ProviderInfo
     from relational_domain.providers import ProviderCapability
     
-    config = DomainConfig.from_env()
+    config = TopicConfig.from_env()
     vector_store = VectorStore(config)
     
     # Get provider information

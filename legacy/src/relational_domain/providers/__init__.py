@@ -1,7 +1,7 @@
 """
 Provider abstraction layer for Relational Domain.
 
-Providers are sovereign compute capabilities that the domain can negotiate with.
+Providers are sovereign compute capabilities that the topic can negotiate with.
 """
 
 from .base import (

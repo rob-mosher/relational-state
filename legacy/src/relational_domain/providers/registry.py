@@ -2,7 +2,7 @@
 Provider registry for Relational Domain.
 
 The registry manages available providers and implements fallback logic.
-Local-first with transparent fallback + metadata about provider usage.
+Local-first with transparent fallback + metadata about topic usage.
 """
 
 from typing import List, Optional, Dict
