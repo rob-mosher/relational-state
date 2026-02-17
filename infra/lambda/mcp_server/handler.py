@@ -202,10 +202,16 @@ def _parse_event_body_any(event: Mapping[str, Any]) -> Union[Mapping[str, Any], 
 def _validate_non_empty_string(value: Any, field: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise RequestError(f"Field '{field}' must be a non-empty string.")
-    if "/" in value:
+    return value.strip()
+
+
+def _validate_path_component(value: Any, field: str) -> str:
+    """Validate a string that will be embedded in an S3 key path component."""
+    result = _validate_non_empty_string(value, field)
+    if "/" in result:
         # Prevent path injection into the S3 prefix structure.
         raise RequestError(f"Field '{field}' must not contain '/'.")
-    return value.strip()
+    return result
 
 
 def _normalize_timestamp(raw_timestamp: Optional[str]) -> str:
@@ -282,8 +288,8 @@ def _build_memory_payload(req: AppendRequest, memory_id: str) -> Dict[str, Any]:
 
 
 def _prepare_memory_record(body: Mapping[str, Any]) -> MemoryRecord:
-    entity_id = _validate_non_empty_string(body.get("entity_id"), "entity_id")
-    topic = _validate_non_empty_string(body.get("topic"), "topic")
+    entity_id = _validate_path_component(body.get("entity_id"), "entity_id")
+    topic = _validate_path_component(body.get("topic"), "topic")
     content = _validate_non_empty_string(body.get("content"), "content")
 
     raw_timestamp = body.get("timestamp")
@@ -771,11 +777,11 @@ def _handle_mcp_request(payload: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
         if tool_name == "list_entities_within_topic":
             try:
                 bucket = _require_bucket_name()
-                topic = _validate_non_empty_string(tool_args.get("topic"), "topic")
+                topic = _validate_path_component(tool_args.get("topic"), "topic")
                 raw_prefix = tool_args.get("entity_prefix")
                 entity_prefix = None
                 if raw_prefix is not None:
-                    entity_prefix = _validate_non_empty_string(
+                    entity_prefix = _validate_path_component(
                         raw_prefix, "entity_prefix"
                     )
                 entities = _list_entities_s3(
@@ -914,4 +920,5 @@ __all__ = [
     "_require_bucket_name",
     "_validate_metadata",
     "_validate_non_empty_string",
+    "_validate_path_component",
 ]

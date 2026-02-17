@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **API Gateway authorizer destroy ordering** - Decoupled authorizer lifecycle from route auth type so the JWT authorizer persists whenever Cognito exists, avoiding the destroy-before-route-update race when toggling `api_authorization_type` away from JWT
+- **Slash validation scope** - `_validate_non_empty_string` was rejecting `/` in all fields including `content`, blocking journal entries with paths, URLs, or code spans. Extracted `_validate_path_component` to apply the path-injection guard only to `entity_id`, `topic`, and `entity_prefix` — the fields that become S3 key segments
 
 ### Changed
 
