@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Relational State skill file** - Interim knowledge-and-behavior set (`docs/skill--relational-state.md`) for any entity to engage with Relational State memory writing and retrieval, bridging the gap until full MCP retrieval tooling is complete (see #2)
+
 ### Fixed
 
 - **API Gateway authorizer destroy ordering** - Decoupled authorizer lifecycle from route auth type so the JWT authorizer persists whenever Cognito exists, avoiding the destroy-before-route-update race when toggling `api_authorization_type` away from JWT
