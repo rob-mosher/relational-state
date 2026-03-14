@@ -470,7 +470,7 @@ def export_embeddings_tool(request: ExportEmbeddingsRequest) -> ExportEmbeddings
 
 
 # ==========================================
-# Topic Introspection Tools (v0.6.0)
+# Topic Introspection Tools (v0.6.1)
 # ==========================================
 
 def describe_topic(request: "DescribeTopicRequest") -> "DescribeTopicResponse":
@@ -527,7 +527,7 @@ def describe_topic(request: "DescribeTopicRequest") -> "DescribeTopicResponse":
     ]
 
     return DescribeTopicResponse(
-        topic_version="0.6.0",
+        topic_version="0.6.1",
         sovereignty_policies=sovereignty_policies,
         available_operations=available_operations,
         providers=provider_infos,

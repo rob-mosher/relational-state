@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-03-14
+
 ### Added
 
 - **Relational State skill file** - Interim knowledge-and-behavior set (`docs/skill--relational-state.md`) for any entity to engage with Relational State memory writing and retrieval, bridging the gap until full MCP retrieval tooling is complete (see #2)
@@ -244,6 +246,7 @@ Release notes: `0.6.0` centers on authentication. This release introduces OAuth 
 - Balance entry guidance: recommend anchor, not too poetic, not too log-based
 - Enhance directory structure guidance and add state file examples
 
+[0.6.1]: https://github.com/rob-mosher/relational-state/releases/tag/v0.6.1
 [0.6.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.6.0
 [0.5.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.5.0
 [0.4.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.4.0

@@ -169,7 +169,7 @@ class ExportEmbeddingsResponse(BaseModel):
     notes: str = Field(..., description="Usage notes for visualization")
 
 
-# Topic Introspection Tools (v0.6.0)
+# Topic Introspection Tools (v0.6.1)
 
 class DescribeTopicRequest(BaseModel):
     """Request model for describe_topic introspection tool."""

@@ -26,7 +26,7 @@ Each entity has sovereign memory within this topic:
     - Provider selection respects entity affinity when possible
 """
 
-__version__ = "0.6.0"
+__version__ = "0.6.1"
 __author__ = "Rob Mosher"
 
 from relational_domain.models import Entry, ContextEnvelope, ContextEntry, TopicConfig
