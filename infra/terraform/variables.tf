@@ -45,121 +45,21 @@ variable "alarm_actions" {
   default     = []
 }
 
-variable "create_caller_user" {
-  description = "Whether to create a dedicated IAM caller user for invoking the API."
-  type        = bool
-  default     = true
-}
-
-variable "create_caller_access_key" {
-  description = "Whether to create an access key for the caller user (stored in state)."
-  type        = bool
-  default     = true
-}
-
-variable "caller_user_name" {
-  description = "IAM username for the dedicated API caller."
-  type        = string
-  default     = "relational-state-caller"
-}
-
-variable "caller_policy_scope" {
-  description = "Scope for the caller invoke policy: exact, stage, or api."
-  type        = string
-  default     = "stage"
-
-  validation {
-    condition     = contains(["exact", "stage", "api"], var.caller_policy_scope)
-    error_message = "caller_policy_scope must be one of: exact, stage, api."
-  }
-}
-
 variable "api_authorization_type" {
-  description = "API Gateway route authorization type (AWS_IAM, JWT, or NONE)."
+  description = "API Gateway route authorization type (JWT or NONE)."
   type        = string
-  default     = "AWS_IAM"
+  default     = "NONE"
 
   validation {
-    condition     = contains(["AWS_IAM", "JWT", "NONE"], var.api_authorization_type)
-    error_message = "api_authorization_type must be one of: AWS_IAM, JWT, NONE."
+    condition     = contains(["JWT", "NONE"], var.api_authorization_type)
+    error_message = "api_authorization_type must be one of: JWT, NONE."
   }
-}
-
-variable "create_cognito_user_pool" {
-  description = "Whether to create a Cognito User Pool for JWT auth."
-  type        = bool
-  default     = false
-}
-
-variable "cognito_user_pool_name" {
-  description = "Cognito User Pool name (when create_cognito_user_pool = true)."
-  type        = string
-  default     = "relational-state-mcp"
-}
-
-variable "cognito_user_pool_client_name" {
-  description = "Cognito User Pool app client name (when create_cognito_user_pool = true)."
-  type        = string
-  default     = "relational-state-mcp-client"
-}
-
-variable "cognito_domain_prefix" {
-  description = "Cognito Hosted UI domain prefix (required for OAuth flows)."
-  type        = string
-  default     = ""
-
-  validation {
-    condition = (
-      !var.create_cognito_user_pool
-      || (
-        length(var.oauth_callback_urls) == 0
-        && !var.enable_dcr_proxy
-      )
-      || trimspace(var.cognito_domain_prefix) != ""
-    )
-    error_message = "cognito_domain_prefix must be set when Cognito OAuth flows are enabled."
-  }
-}
-
-variable "oauth_callback_urls" {
-  description = "Allowed OAuth callback URLs for Cognito Hosted UI (authorization code + PKCE)."
-  type        = list(string)
-  default     = []
-}
-
-variable "oauth_logout_urls" {
-  description = "Allowed OAuth logout URLs for Cognito Hosted UI."
-  type        = list(string)
-  default     = []
 }
 
 variable "oauth_scopes" {
   description = "OAuth scopes to allow for the MCP client."
   type        = list(string)
   default     = ["openid", "email", "profile"]
-}
-
-variable "enable_dcr_proxy" {
-  description = "Whether to expose a lightweight DCR proxy endpoint backed by Cognito."
-  type        = bool
-  default     = false
-
-  validation {
-    condition     = !var.enable_dcr_proxy || var.create_cognito_user_pool
-    error_message = "enable_dcr_proxy requires create_cognito_user_pool = true."
-  }
-}
-
-variable "oauth_allowed_redirect_uri_exact" {
-  description = "Exact redirect URIs permitted by the DCR proxy."
-  type        = list(string)
-  default     = []
-}
-
-variable "oauth_allowed_redirect_uri_prefixes" {
-  description = "Redirect URI prefixes permitted by the DCR proxy."
-  type        = list(string)
-  default     = []
 }
 
 variable "oauth_resource" {
@@ -169,68 +69,66 @@ variable "oauth_resource" {
 }
 
 variable "oauth_issuer" {
-  description = "OAuth issuer override (defaults to Cognito issuer when created)."
+  description = "OAuth issuer URL (defaults to jwt_issuer). Example: https://YOUR_TENANT.auth0.com/"
   type        = string
   default     = ""
 }
 
 variable "oauth_authorization_endpoint" {
-  description = "OAuth authorization endpoint override."
+  description = "OAuth authorization endpoint. Example: https://YOUR_TENANT.auth0.com/authorize"
   type        = string
   default     = ""
 }
 
 variable "oauth_token_endpoint" {
-  description = "OAuth token endpoint override."
+  description = "OAuth token endpoint. Example: https://YOUR_TENANT.auth0.com/oauth/token"
   type        = string
   default     = ""
 }
 
 variable "oauth_userinfo_endpoint" {
-  description = "OAuth userinfo endpoint override."
+  description = "OAuth userinfo endpoint. Example: https://YOUR_TENANT.auth0.com/userinfo"
   type        = string
   default     = ""
 }
 
 variable "oauth_jwks_uri" {
-  description = "OAuth JWKS endpoint override."
+  description = "OAuth JWKS endpoint (defaults to {oauth_issuer}/.well-known/jwks.json)."
   type        = string
   default     = ""
 }
 
 variable "oauth_registration_endpoint" {
-  description = "OAuth dynamic client registration endpoint override."
+  description = "OAuth dynamic client registration endpoint (if supported by IdP)."
+  type        = string
+  default     = ""
+}
+
+variable "oauth_device_authorization_endpoint" {
+  description = "OAuth device authorization endpoint for CLI/TUI clients. Example: https://YOUR_TENANT.auth0.com/oauth/device/code"
   type        = string
   default     = ""
 }
 
 variable "jwt_issuer" {
-  description = "JWT issuer URL (used when api_authorization_type = JWT and not creating a Cognito pool)."
+  description = "JWT issuer URL (required when api_authorization_type = JWT). Example: https://YOUR_TENANT.auth0.com/"
   type        = string
   default     = ""
 
   validation {
-    condition = (
-      var.api_authorization_type != "JWT"
-      || var.create_cognito_user_pool
-      || trimspace(var.jwt_issuer) != ""
-    )
-    error_message = "jwt_issuer must be set when api_authorization_type is JWT and create_cognito_user_pool is false."
+    condition     = var.api_authorization_type != "JWT" || trimspace(var.jwt_issuer) != ""
+    error_message = "jwt_issuer must be set when api_authorization_type is JWT."
   }
 }
 
 variable "jwt_audiences" {
-  description = "JWT audience list (used when api_authorization_type = JWT and not creating a Cognito pool)."
+  description = "JWT audience list (required when api_authorization_type = JWT). Example: your Auth0 API identifier."
   type        = list(string)
   default     = []
 
   validation {
-    condition = (
-      var.api_authorization_type != "JWT"
-      || var.create_cognito_user_pool
-      || length(var.jwt_audiences) > 0
-    )
-    error_message = "jwt_audiences must be set when api_authorization_type is JWT and create_cognito_user_pool is false."
+    condition     = var.api_authorization_type != "JWT" || length(var.jwt_audiences) > 0
+    error_message = "jwt_audiences must be set when api_authorization_type is JWT."
   }
 }
 

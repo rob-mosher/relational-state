@@ -28,10 +28,7 @@ def clear_bucket_env() -> None:
     os.environ.pop(mcp_server.OAUTH_REGISTRATION_ENDPOINT_ENV, None)
     os.environ.pop(mcp_server.OAUTH_RESOURCE_ENV, None)
     os.environ.pop(mcp_server.OAUTH_SCOPES_ENV, None)
-    os.environ.pop(mcp_server.OAUTH_ALLOWED_REDIRECT_URI_EXACT_ENV, None)
-    os.environ.pop(mcp_server.OAUTH_ALLOWED_REDIRECT_URI_PREFIX_ENV, None)
-    os.environ.pop(mcp_server.ENABLE_DCR_PROXY_ENV, None)
-    os.environ.pop(mcp_server.COGNITO_USER_POOL_ID_ENV, None)
+    os.environ.pop(mcp_server.OAUTH_DEVICE_AUTHORIZATION_ENDPOINT_ENV, None)
 
 
 def test_prepare_memory_record_builds_expected_shape() -> None:

@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Auth0 (Okta) JWT support** - Replaced AWS Cognito with Auth0 as the identity provider; API Gateway JWT authorizer now validates Auth0 tokens natively
+- **Device authorization grant** - OAuth metadata now advertises the device code grant type and endpoint when configured, enabling Claude Code and other CLI/TUI clients to authenticate
+
+### Removed
+
+- **AWS Cognito** - Removed Cognito User Pool, domain, and app client resources; all authentication now handled by Auth0
+- **IAM caller user** - Removed dedicated IAM caller user, access keys, and SigV4 auth support (`AWS_IAM` authorization type)
+- **DCR proxy** - Removed the dynamic client registration endpoint (`POST /oauth/register`) and its Cognito-backed implementation; Auth0 applications are configured in the Auth0 dashboard
+- **Cognito helper scripts** - Removed `mcp_cognito_token.sh`, `mcp_cognito_login.sh`, `mcp_cognito_refresh.sh`, and `mcp_cognito_codex_add.sh`
+- **Terraform moved blocks** - Cleaned up historical `append_memory` → `add_memory` rename artifacts
+
+### Changed
+
+- **Auth mode simplified** - `api_authorization_type` now accepts only `JWT` or `NONE` (default `NONE` for dev); `AWS_IAM` removed
+- **Infra README rewrite** - Replaced Cognito/SigV4 documentation with Auth0 setup guide covering Claude.ai (browser OAuth + PKCE) and Claude Code (device flow)
+
+
 ## [0.6.1] - 2026-03-14
 
 ### Added

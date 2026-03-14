@@ -26,12 +26,9 @@ OAUTH_TOKEN_ENDPOINT_ENV = "OAUTH_TOKEN_ENDPOINT"
 OAUTH_USERINFO_ENDPOINT_ENV = "OAUTH_USERINFO_ENDPOINT"
 OAUTH_JWKS_URI_ENV = "OAUTH_JWKS_URI"
 OAUTH_REGISTRATION_ENDPOINT_ENV = "OAUTH_REGISTRATION_ENDPOINT"
+OAUTH_DEVICE_AUTHORIZATION_ENDPOINT_ENV = "OAUTH_DEVICE_AUTHORIZATION_ENDPOINT"
 OAUTH_RESOURCE_ENV = "OAUTH_RESOURCE"
 OAUTH_SCOPES_ENV = "OAUTH_SCOPES"
-OAUTH_ALLOWED_REDIRECT_URI_EXACT_ENV = "OAUTH_ALLOWED_REDIRECT_URI_EXACT"
-OAUTH_ALLOWED_REDIRECT_URI_PREFIX_ENV = "OAUTH_ALLOWED_REDIRECT_URI_PREFIX"
-ENABLE_DCR_PROXY_ENV = "ENABLE_DCR_PROXY"
-COGNITO_USER_POOL_ID_ENV = "COGNITO_USER_POOL_ID"
 README_TEXT = (
     "Relational State is a memory space that honors relational continuity between "
     "entities (human, AI, or otherwise) centered around topics of knowledge. "
@@ -437,10 +434,6 @@ def _response(status_code: int, body: Mapping[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _split_env_list(value: str) -> List[str]:
-    return [item.strip() for item in value.split(",") if item.strip()]
-
-
 def _oauth_scopes() -> List[str]:
     scopes_raw = os.getenv(OAUTH_SCOPES_ENV, "").strip()
     if not scopes_raw:
@@ -475,17 +468,22 @@ def _oauth_authorization_server() -> Dict[str, Any]:
     userinfo_endpoint = os.getenv(OAUTH_USERINFO_ENDPOINT_ENV, "").strip()
     jwks_uri = os.getenv(OAUTH_JWKS_URI_ENV, "").strip()
     registration_endpoint = os.getenv(OAUTH_REGISTRATION_ENDPOINT_ENV, "").strip()
+    device_authorization_endpoint = os.getenv(OAUTH_DEVICE_AUTHORIZATION_ENDPOINT_ENV, "").strip()
     scopes = _oauth_scopes()
 
     if not issuer or not authorization_endpoint or not token_endpoint:
         raise RequestError("OAuth metadata is not configured.")
+
+    grant_types = ["authorization_code", "refresh_token"]
+    if device_authorization_endpoint:
+        grant_types.append("urn:ietf:params:oauth:grant-type:device_code")
 
     payload: Dict[str, Any] = {
         "issuer": issuer,
         "authorization_endpoint": authorization_endpoint,
         "token_endpoint": token_endpoint,
         "response_types_supported": ["code"],
-        "grant_types_supported": ["authorization_code", "refresh_token"],
+        "grant_types_supported": grant_types,
         "token_endpoint_auth_methods_supported": ["none"],
         "code_challenge_methods_supported": ["S256"],
     }
@@ -497,123 +495,9 @@ def _oauth_authorization_server() -> Dict[str, Any]:
         payload["userinfo_endpoint"] = userinfo_endpoint
     if registration_endpoint:
         payload["registration_endpoint"] = registration_endpoint
+    if device_authorization_endpoint:
+        payload["device_authorization_endpoint"] = device_authorization_endpoint
     return payload
-
-
-def _allowed_redirect_uris() -> Dict[str, List[str]]:
-    exact = _split_env_list(os.getenv(OAUTH_ALLOWED_REDIRECT_URI_EXACT_ENV, ""))
-    prefixes = _split_env_list(os.getenv(OAUTH_ALLOWED_REDIRECT_URI_PREFIX_ENV, ""))
-    return {"exact": exact, "prefixes": prefixes}
-
-
-def _is_redirect_uri_allowed(uri: str, allowlist: Dict[str, List[str]]) -> bool:
-    if uri in allowlist["exact"]:
-        return True
-    for prefix in allowlist["prefixes"]:
-        if uri.startswith(prefix):
-            return True
-    return False
-
-
-def _normalize_redirect_uris(value: Any) -> List[str]:
-    if value is None:
-        return []
-    if isinstance(value, str):
-        return [value]
-    if isinstance(value, list):
-        return [item for item in value if isinstance(item, str)]
-    return []
-
-
-def _dcr_scopes(requested: Any, allowed: List[str]) -> List[str]:
-    if not requested:
-        return allowed
-    if isinstance(requested, str):
-        requested_scopes = [scope for scope in requested.split() if scope]
-    elif isinstance(requested, list):
-        requested_scopes = [scope for scope in requested if isinstance(scope, str)]
-    else:
-        requested_scopes = []
-    if not requested_scopes:
-        return allowed
-    allowed_set = set(allowed)
-    return [scope for scope in requested_scopes if scope in allowed_set]
-
-
-def _handle_dcr(event: Mapping[str, Any]) -> Dict[str, Any]:
-    if os.getenv(ENABLE_DCR_PROXY_ENV, "").lower() != "true":
-        return _response(404, {"error": "DCR proxy is disabled."})
-
-    user_pool_id = os.getenv(COGNITO_USER_POOL_ID_ENV, "").strip()
-    if not user_pool_id:
-        return _response(500, {"error": "Cognito user pool is not configured."})
-
-    try:
-        body = _parse_event_body(event)
-    except RequestError as exc:
-        return _response(400, {"error": str(exc)})
-
-    redirect_uris = _normalize_redirect_uris(body.get("redirect_uris"))
-    if not redirect_uris:
-        return _response(400, {"error": "redirect_uris is required."})
-
-    allowlist = _allowed_redirect_uris()
-    if not allowlist["exact"] and not allowlist["prefixes"]:
-        return _response(
-            400,
-            {"error": "DCR allowlist is empty. Configure oauth_allowed_redirect_uri_*."},
-        )
-
-    for uri in redirect_uris:
-        if not _is_redirect_uri_allowed(uri, allowlist):
-            return _response(400, {"error": f"redirect_uri not allowed: {uri}"})
-
-    requested_scopes = body.get("scope") or body.get("scopes")
-    allowed_scopes = _oauth_scopes()
-    final_scopes = _dcr_scopes(requested_scopes, allowed_scopes)
-
-    client_name = body.get("client_name")
-    if not isinstance(client_name, str) or not client_name.strip():
-        client_name = f"mcp-dcr-{uuid.uuid4().hex[:10]}"
-
-    logout_uris = _normalize_redirect_uris(body.get("post_logout_redirect_uris"))
-
-    try:
-        import boto3
-    except ImportError as exc:
-        return _response(500, {"error": "boto3 is required for DCR."})
-
-    client = boto3.client("cognito-idp")
-    try:
-        response = client.create_user_pool_client(
-            UserPoolId=user_pool_id,
-            ClientName=client_name,
-            GenerateSecret=False,
-            AllowedOAuthFlowsUserPoolClient=True,
-            AllowedOAuthFlows=["code"],
-            AllowedOAuthScopes=final_scopes or allowed_scopes,
-            CallbackURLs=redirect_uris,
-            LogoutURLs=logout_uris,
-            SupportedIdentityProviders=["COGNITO"],
-        )
-    except Exception as exc:
-        return _response(500, {"error": f"Failed to register client: {exc}"})
-
-    created = response.get("UserPoolClient", {})
-    client_id = created.get("ClientId")
-    issued_at = int(datetime.now(UTC).timestamp())
-
-    payload = {
-        "client_id": client_id,
-        "client_name": client_name,
-        "redirect_uris": redirect_uris,
-        "token_endpoint_auth_method": "none",
-        "grant_types": ["authorization_code", "refresh_token"],
-        "response_types": ["code"],
-        "scope": " ".join(final_scopes or allowed_scopes),
-        "client_id_issued_at": issued_at,
-    }
-    return _response(201, payload)
 
 
 def _jsonrpc_error(req_id: Any, code: int, message: str) -> Dict[str, Any]:
@@ -854,9 +738,6 @@ def handler(event: Mapping[str, Any], _context: Any) -> Dict[str, Any]:
             return _response(200, _oauth_authorization_server())
         except RequestError as exc:
             return _response(404, {"error": str(exc)})
-    if method == "POST" and path == "/oauth/register":
-        return _handle_dcr(event)
-
     try:
         decoded = _parse_event_body_any(event)
     except RequestError as exc:

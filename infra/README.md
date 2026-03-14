@@ -75,228 +75,102 @@ Endpoint route:
 
 Auth:
 
-- The route supports `AWS_IAM`, `JWT`, or `NONE` (dev-only).
-- `AWS_IAM`: requests must be SigV4 signed with AWS credentials that can invoke the API.
-  - Terraform can optionally create a dedicated caller user and access keys.
-  - Use `terraform -chdir=infra/terraform output -raw caller_access_key_id` and
-    `caller_secret_access_key`.
-  - If you see `403`, set `caller_policy_scope = "stage"` (or `"api"`) in tfvars.
-- `JWT`: API Gateway validates bearer tokens (Authorization: `Bearer <token>`).
-  - Terraform can create a Cognito User Pool and app client (`create_cognito_user_pool = true`).
-  - The JWT `iss` (issuer) is the User Pool URL, and `aud` (audience) is the app client ID.
+- The route supports `JWT` or `NONE` (dev-only).
+- `JWT`: API Gateway validates bearer tokens (`Authorization: Bearer <token>`).
+  - Tokens are issued by Auth0 (Okta). Configure `jwt_issuer` and `jwt_audiences`
+    in `terraform.tfvars`.
   - No scopes are required by default; tighten later with `jwt_authorization_scopes`.
 - `NONE`: for temporary local dev only.
-- For production, prefer JWT auth and set `create_caller_user = false`.
+- For production, use JWT auth.
 - Use the `mcp_url` output as-is (it includes a trailing `/` required by API Gateway routing).
 - If you see `429`, consider setting `throttling_burst_limit` and
   `throttling_rate_limit` in tfvars to explicit dev-friendly values.
 
 Pick one auth path below:
 
-### Via SigV4 (AWS_IAM)
+### Via JWT (Auth0)
 
-Use this when you want IAM-signed requests. Requires a caller user
-(`create_caller_user = true`) or your own IAM principal with invoke permissions.
+Use this when you want bearer tokens. Requires an Auth0 tenant with an
+Application and API configured.
 
-Example SigV4 call using the Terraform-managed caller user (note the trailing slash):
+#### Auth0 Setup
 
-```bash
-export AWS_ACCESS_KEY_ID="$(terraform -chdir=infra/terraform output -raw caller_access_key_id)"
-export AWS_SECRET_ACCESS_KEY="$(terraform -chdir=infra/terraform output -raw caller_secret_access_key)"
-export AWS_REGION="$(terraform -chdir=infra/terraform output -raw aws_region)"
-URL="$(terraform -chdir=infra/terraform output -raw mcp_url)"
+1. **Create an Auth0 tenant** at [auth0.com](https://auth0.com) (or use an existing one).
 
-curl --fail-with-body \
-  --aws-sigv4 "aws:amz:${AWS_REGION}:execute-api" \
-  -H "content-type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"add_memory","arguments":{"entity_id":"rob","topic":"relational-state","content":"Testing add_memory via IAM."}}}' \
-  "$URL"
-```
+2. **Create an Auth0 API** (Resource Server):
+   - Name: `Relational State MCP` (or your preference)
+   - Identifier (audience): your MCP URL or a logical URI (e.g., `https://mcp.example.com/`)
+   - Signing algorithm: RS256
 
-### Via JWT (Cognito User Pool)
+3. **Create an Auth0 Application** for Claude.ai (browser, OAuth + PKCE):
+   - Type: Single Page Application
+   - Allowed Callback URLs: `https://claude.ai/api/mcp/auth_callback`, `https://claude.com/api/mcp/auth_callback`
+   - Allowed Logout URLs: `https://claude.ai/`, `https://claude.com/`
+   - Allowed Web Origins: `https://claude.ai`, `https://claude.com`
+   - Under Advanced Settings > Grant Types, ensure "Authorization Code" is enabled
 
-Use this when you want bearer tokens. Requires a Cognito User Pool and app client
-(`create_cognito_user_pool = true`).
+4. **Enable Device Authorization Grant** (for Claude Code / TUI clients):
+   - In the same Application (or a separate Native application), go to
+     Advanced Settings > Grant Types and enable "Device Code"
+   - In your Auth0 tenant settings, ensure the Device Code grant is enabled
 
-Example JWT setup (Cognito, no scopes) and how to mint a token:
+5. **Create a test user** in Auth0 (Authentication > Database > Username-Password-Authentication).
 
-```bash
-POOL_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_id)"
-CLIENT_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_client_id)"
-AWS_REGION="$(terraform -chdir=infra/terraform output -raw aws_region)"
+#### Terraform Configuration
 
-# Create a user (admin only, since allow_admin_create_user_only = true)
-aws cognito-idp admin-create-user \
-  --user-pool-id "$POOL_ID" \
-  --username "dev@example.com" \
-  --temporary-password 'TempPass#1234'
-
-# Set a permanent password
-aws cognito-idp admin-set-user-password \
-  --user-pool-id "$POOL_ID" \
-  --username "dev@example.com" \
-  --password 'StrongPass#1234' \
-  --permanent
-
-# Get tokens (use the ID token for API Gateway JWT auth)
-ID_TOKEN="$(
-  aws cognito-idp initiate-auth \
-    --auth-flow USER_PASSWORD_AUTH \
-    --client-id "$CLIENT_ID" \
-    --auth-parameters USERNAME="dev@example.com",PASSWORD="StrongPass#1234" \
-  | jq -r '.AuthenticationResult.IdToken'
-)"
-```
-
-### Via OAuth (Cognito Hosted UI)
-
-Use this when you need OAuth-based clients (Claude UI, ChatGPT MCP connector, or
-other MCP clients that require browser login). This reuses the same Cognito User Pool.
-
-This MCP server implements OAuth 2.0 discovery endpoints, so clients can
-automatically discover and configure authentication. The server supports both
-static client registration (via Cognito console or Terraform) and optional
-dynamic client registration (DCR).
-
-#### Setup for Claude.ai Web
-
-1. **Update your `terraform.tfvars`** with these OAuth settings:
+Update your `terraform.tfvars`:
 
 ```hcl
-# Switch to JWT auth (required for OAuth)
 api_authorization_type = "JWT"
 
-# Enable Cognito User Pool
-create_cognito_user_pool      = true
-cognito_user_pool_name        = "relational-state-mcp"
-cognito_user_pool_client_name = "relational-state-mcp-client"
+jwt_issuer    = "https://YOUR_TENANT.auth0.com/"
+jwt_audiences = ["YOUR_AUTH0_API_IDENTIFIER"]
 
-# Set a globally unique domain prefix
-cognito_domain_prefix = "relational-state-mcp-yourname"
-
-# Add Claude.ai callback URLs
-oauth_callback_urls = [
-  "https://claude.ai/api/mcp/auth_callback",
-  "https://claude.com/api/mcp/auth_callback"
-]
-
-# Add Claude.ai logout URLs
-oauth_logout_urls = [
-  "https://claude.ai/",
-  "https://claude.com/"
-]
-
-# Optional: Enable dynamic client registration
-enable_dcr_proxy = true
-oauth_allowed_redirect_uri_exact = [
-  "https://claude.ai/api/mcp/auth_callback",
-  "https://claude.com/api/mcp/auth_callback"
-]
+oauth_issuer                        = "https://YOUR_TENANT.auth0.com/"
+oauth_authorization_endpoint        = "https://YOUR_TENANT.auth0.com/authorize"
+oauth_token_endpoint                = "https://YOUR_TENANT.auth0.com/oauth/token"
+oauth_userinfo_endpoint             = "https://YOUR_TENANT.auth0.com/userinfo"
+oauth_jwks_uri                      = "https://YOUR_TENANT.auth0.com/.well-known/jwks.json"
+oauth_device_authorization_endpoint = "https://YOUR_TENANT.auth0.com/oauth/device/code"
 ```
 
-2. **Apply Terraform changes:**
+Apply:
 
 ```bash
 terraform -chdir=infra/terraform plan -var-file="terraform.tfvars"
 terraform -chdir=infra/terraform apply -var-file="terraform.tfvars"
 ```
 
-3. **Create a Cognito user** (for authentication):
+#### Connect Claude.ai (Browser)
 
-```bash
-POOL_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_id)"
-
-aws cognito-idp admin-create-user \
-  --user-pool-id "$POOL_ID" \
-  --username "your-email@example.com" \
-  --temporary-password 'TempPass#1234'
-
-aws cognito-idp admin-set-user-password \
-  --user-pool-id "$POOL_ID" \
-  --username "your-email@example.com" \
-  --password 'YourStrongPassword#1234' \
-  --permanent
-```
-
-4. **Get your MCP URL:**
+1. Get your MCP URL:
 
 ```bash
 terraform -chdir=infra/terraform output -raw mcp_url
 ```
 
-5. **Connect Claude.ai:**
+2. In Claude.ai, go to Settings > Integrations > MCP Servers.
+3. Add your MCP URL.
+4. Claude.ai will discover OAuth endpoints automatically via
+   `/.well-known/oauth-authorization-server`.
+5. You'll be redirected to Auth0 to log in.
+6. After login, Claude.ai can access your MCP server.
 
-   - Go to Settings → Integrations → MCP Servers in Claude.ai
-   - Add your MCP URL
-   - Claude.ai will discover OAuth endpoints automatically
-   - You'll be redirected to Cognito to log in
-   - After login, Claude.ai can access your MCP server
+#### Connect Claude Code (TUI)
 
-#### How it works
-
-When Claude.ai connects:
-1. Fetches `/.well-known/oauth-protected-resource` to discover the OAuth server
-2. Fetches `/.well-known/oauth-authorization-server` for endpoint URLs
-3. Redirects you to Cognito Hosted UI for login
-4. Exchanges authorization code for tokens
-5. Uses JWT bearer tokens to call your MCP server
-
-#### OAuth metadata endpoints
-
-This MCP server exposes:
-
-- `GET /.well-known/oauth-protected-resource`
-- `GET /.well-known/oauth-authorization-server`
-- `POST /oauth/register` (only when `enable_dcr_proxy = true`)
-
-#### Dynamic Client Registration (DCR)
-
-If you enable `enable_dcr_proxy = true`, OAuth clients can register themselves
-dynamically. Configure allowed redirect URIs using:
-
-- `oauth_allowed_redirect_uri_exact` - exact URI matches
-- `oauth_allowed_redirect_uri_prefixes` - prefix matches (e.g., `https://chatgpt.com/aip/`)
-
-Troubleshooting (JWT auth flow):
-
-- If `initiate-auth` returns `UserNotFoundException` for a confirmed user, the app
-  client may not allow `USER_PASSWORD_AUTH` (or is configured to use SRP).
-  In that case, use the admin auth flow instead:
+Claude Code uses HTTP transport with bearer tokens. You can obtain a token
+from Auth0 and register the MCP server:
 
 ```bash
-ID_TOKEN="$(
-  aws cognito-idp admin-initiate-auth \
-    --user-pool-id "$POOL_ID" \
-    --client-id "$CLIENT_ID" \
-    --auth-flow ADMIN_USER_PASSWORD_AUTH \
-    --auth-parameters USERNAME="dev@example.com",PASSWORD="StrongPass#1234" \
-  | jq -r '.AuthenticationResult.IdToken'
-)"
-```
-
-Codex MCP (JWT bearer token):
-
-```bash
-export MCP_BEARER_TOKEN="$ID_TOKEN"
-codex mcp add relational-state \
-  --url "$(terraform -chdir=infra/terraform output -raw mcp_url)" \
-  --bearer-token-env-var MCP_BEARER_TOKEN
-```
-
-Claude Code MCP (JWT bearer token over HTTP transport):
-
-```bash
-export MCP_BEARER_TOKEN="$ID_TOKEN"
+MCP_URL="$(terraform -chdir=infra/terraform output -raw mcp_url)"
 
 # Option 1: Register per-project (local scope, default)
-claude mcp add --transport http relational-state \
-  "$(terraform -chdir=infra/terraform output -raw mcp_url)" \
-  --header "Authorization: Bearer $MCP_BEARER_TOKEN"
+claude mcp add --transport http relational-state "$MCP_URL" \
+  --header "Authorization: Bearer $TOKEN"
 
 # Option 2: Register globally (user scope, available across all projects)
-claude mcp add --transport http relational-state \
-  "$(terraform -chdir=infra/terraform output -raw mcp_url)" \
-  --header "Authorization: Bearer $MCP_BEARER_TOKEN" \
+claude mcp add --transport http relational-state "$MCP_URL" \
+  --header "Authorization: Bearer $TOKEN" \
   --scope user
 
 # Verify registration
@@ -304,65 +178,24 @@ claude mcp list
 claude mcp get relational-state
 ```
 
-Token helper script (prints an export line):
+#### How It Works
 
-```bash
-POOL_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_id)"
-CLIENT_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_client_id)"
-USERNAME="dev@example.com"
-PASSWORD="StrongPass#1234"
+When an OAuth client connects:
+1. Fetches `/.well-known/oauth-protected-resource` to discover the OAuth server
+2. Fetches `/.well-known/oauth-authorization-server` for endpoint URLs
+3. Redirects you to Auth0 for login (authorization code + PKCE)
+4. Exchanges authorization code for tokens
+5. Uses JWT bearer tokens to call your MCP server
 
-POOL_ID="$POOL_ID" CLIENT_ID="$CLIENT_ID" USERNAME="$USERNAME" PASSWORD="$PASSWORD" \
-  infra/scripts/mcp_cognito_token.sh
-```
+The server also advertises the device authorization grant when configured,
+enabling CLI/TUI clients to authenticate without a browser redirect.
 
-Login once and save a refresh token (avoid reusing the password later):
+#### OAuth Metadata Endpoints
 
-```bash
-REFRESH_TOKEN_FILE="$HOME/.codex/mcp/relational-state.refresh"
-POOL_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_id)"
-CLIENT_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_client_id)"
-USERNAME="dev@example.com"
-PASSWORD="StrongPass#1234"
+This MCP server exposes:
 
-POOL_ID="$POOL_ID" CLIENT_ID="$CLIENT_ID" USERNAME="$USERNAME" PASSWORD="$PASSWORD" \
-REFRESH_TOKEN_FILE="$REFRESH_TOKEN_FILE" infra/scripts/mcp_cognito_login.sh
-
-# If the app client doesn't allow USER_PASSWORD_AUTH (and you see UserNotFoundException),
-# use the admin auth flow instead:
-# AUTH_FLOW=ADMIN_USER_PASSWORD_AUTH POOL_ID=... CLIENT_ID=... USERNAME=... PASSWORD=... \
-# REFRESH_TOKEN_FILE=... infra/scripts/mcp_cognito_login.sh
-```
-
-Refresh the token without a password (prints an export line):
-
-```bash
-CLIENT_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_client_id)"
-REFRESH_TOKEN_FILE="$HOME/.codex/mcp/relational-state.refresh"
-
-CLIENT_ID="$CLIENT_ID" REFRESH_TOKEN_FILE="$REFRESH_TOKEN_FILE" \
-  infra/scripts/mcp_cognito_refresh.sh
-```
-
-One-shot add to Codex MCP (uses refresh token if present, otherwise logs in):
-
-```bash
-MCP_NAME="relational-state"
-MCP_URL="$(terraform -chdir=infra/terraform output -raw mcp_url)"
-POOL_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_id)"
-CLIENT_ID="$(terraform -chdir=infra/terraform output -raw cognito_user_pool_client_id)"
-USERNAME="dev@example.com"
-PASSWORD="StrongPass#1234"
-REFRESH_TOKEN_FILE="$HOME/.codex/mcp/relational-state.refresh"
-
-MCP_NAME="$MCP_NAME" MCP_URL="$MCP_URL" CLIENT_ID="$CLIENT_ID" POOL_ID="$POOL_ID" \
-USERNAME="$USERNAME" PASSWORD="$PASSWORD" REFRESH_TOKEN_FILE="$REFRESH_TOKEN_FILE" \
-  infra/scripts/mcp_cognito_codex_add.sh
-
-# For admin auth flow:
-# AUTH_FLOW=ADMIN_USER_PASSWORD_AUTH MCP_NAME=... MCP_URL=... CLIENT_ID=... POOL_ID=... \
-# USERNAME=... PASSWORD=... REFRESH_TOKEN_FILE=... infra/scripts/mcp_cognito_codex_add.sh
-```
+- `GET /.well-known/oauth-protected-resource`
+- `GET /.well-known/oauth-authorization-server`
 
 ### Via NONE (dev-only)
 

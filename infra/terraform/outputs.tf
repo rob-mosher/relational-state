@@ -34,17 +34,17 @@ output "mcp_url" {
 }
 
 output "authorization_type" {
-  description = "MCP server route authorization type (AWS_IAM requires SigV4 signing, JWT uses bearer tokens)."
+  description = "MCP server route authorization type (JWT uses bearer tokens, NONE for dev)."
   value       = aws_apigatewayv2_route.add_memory.authorization_type
 }
 
 output "jwt_issuer" {
-  description = "JWT issuer URL (Cognito User Pool issuer when enabled)."
+  description = "JWT issuer URL."
   value       = local.jwt_issuer
 }
 
 output "jwt_audiences" {
-  description = "JWT audience list enforced by the API (Cognito app client ID when enabled)."
+  description = "JWT audience list enforced by the API."
   value       = local.jwt_audiences
 }
 
@@ -59,33 +59,28 @@ output "oauth_protected_resource_url" {
 }
 
 output "oauth_authorization_endpoint" {
-  description = "OAuth authorization endpoint (Cognito Hosted UI when enabled)."
+  description = "OAuth authorization endpoint."
   value       = local.oauth_authorization_endpoint
 }
 
 output "oauth_token_endpoint" {
-  description = "OAuth token endpoint (Cognito Hosted UI when enabled)."
+  description = "OAuth token endpoint."
   value       = local.oauth_token_endpoint
 }
 
 output "oauth_registration_endpoint" {
-  description = "OAuth dynamic client registration endpoint (if enabled)."
+  description = "OAuth dynamic client registration endpoint (if configured)."
   value       = local.oauth_registration_endpoint
+}
+
+output "oauth_device_authorization_endpoint" {
+  description = "OAuth device authorization endpoint for CLI/TUI clients."
+  value       = local.oauth_device_authorization_endpoint
 }
 
 output "oauth_issuer" {
   description = "OAuth issuer used for the MCP resource."
   value       = local.oauth_issuer
-}
-
-output "cognito_user_pool_id" {
-  description = "Cognito User Pool ID (if created)."
-  value       = try(aws_cognito_user_pool.mcp[0].id, null)
-}
-
-output "cognito_user_pool_client_id" {
-  description = "Cognito User Pool app client ID (if created)."
-  value       = try(aws_cognito_user_pool_client.mcp[0].id, null)
 }
 
 output "lambda_log_group_name" {
@@ -108,24 +103,3 @@ output "api_5xx_alarm_name" {
   value       = aws_cloudwatch_metric_alarm.api_5xx.alarm_name
 }
 
-output "caller_user_name" {
-  description = "Dedicated IAM caller username (if enabled)."
-  value       = try(aws_iam_user.caller[0].name, null)
-}
-
-output "caller_invoke_arn" {
-  description = "Execute API ARN the caller policy allows."
-  value       = local.mcp_invoke_arn
-}
-
-output "caller_access_key_id" {
-  description = "Access key ID for the dedicated caller user (if enabled)."
-  value       = try(aws_iam_access_key.caller[0].id, null)
-  sensitive   = true
-}
-
-output "caller_secret_access_key" {
-  description = "Secret access key for the dedicated caller user (if enabled)."
-  value       = try(aws_iam_access_key.caller[0].secret, null)
-  sensitive   = true
-}

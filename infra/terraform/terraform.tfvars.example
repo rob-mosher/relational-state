@@ -29,54 +29,22 @@ log_retention_days = 7
 # Optional ARNs to notify when alarms fire (for example, SNS topics)
 alarm_actions = []
 
-# Dedicated IAM caller user for SigV4 requests (stored in state if access keys enabled).
-# Make this unique per environment/account to avoid name collisions.
-create_caller_user       = true
-create_caller_access_key = true
-caller_user_name         = "relational-state-caller-REPLACE_ME"
-caller_policy_scope      = "stage"
+# API auth mode: JWT or NONE (NONE is for development only).
+api_authorization_type = "NONE"
 
-# API auth mode: AWS_IAM, JWT, or NONE
-api_authorization_type = "AWS_IAM"
+# Auth0 (Okta) JWT configuration.
+# Set api_authorization_type = "JWT" and fill these in to enable Auth0 auth.
+# jwt_issuer    = "https://YOUR_TENANT.auth0.com/"
+# jwt_audiences = ["YOUR_AUTH0_API_IDENTIFIER"]
 
-# Cognito-backed JWT auth (recommended for MCP clients that use bearer tokens).
-# When enabled, Terraform creates a User Pool + app client and wires API Gateway JWT auth.
-create_cognito_user_pool      = false
-cognito_user_pool_name        = "relational-state-mcp"
-cognito_user_pool_client_name = "relational-state-mcp-client"
-
-# Cognito Hosted UI domain prefix (required for OAuth authorization code flow).
-# Example: relational-state-mcp-auth
-cognito_domain_prefix = ""
-
-# OAuth callback URLs for Cognito Hosted UI.
-# Claude UI callbacks:
-# https://claude.ai/api/mcp/auth_callback
-# https://claude.com/api/mcp/auth_callback
-# Claude Code / MCP Inspector callbacks:
-# http://localhost:6274/oauth/callback
-# http://localhost:6274/oauth/callback/debug
-oauth_callback_urls = []
-
-# OAuth logout URLs for Cognito Hosted UI.
-oauth_logout_urls = []
-
-# Enable a lightweight DCR proxy for clients that require dynamic registration.
-enable_dcr_proxy = false
-
-# Exact redirect URIs permitted by the DCR proxy.
-oauth_allowed_redirect_uri_exact = []
-
-# Redirect URI prefixes permitted by the DCR proxy.
-# Example ChatGPT callbacks:
-# https://chat.openai.com/aip/
-# https://chatgpt.com/aip/
-oauth_allowed_redirect_uri_prefixes = []
-
-# If you disable create_cognito_user_pool but keep api_authorization_type = "JWT",
-# provide your own issuer and audience list.
-# jwt_issuer    = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_XXXXXXX"
-# jwt_audiences = ["your-app-client-id"]
+# OAuth endpoint configuration (Auth0).
+# These populate the .well-known/oauth-authorization-server metadata.
+# oauth_issuer                        = "https://YOUR_TENANT.auth0.com/"
+# oauth_authorization_endpoint        = "https://YOUR_TENANT.auth0.com/authorize"
+# oauth_token_endpoint                = "https://YOUR_TENANT.auth0.com/oauth/token"
+# oauth_userinfo_endpoint             = "https://YOUR_TENANT.auth0.com/userinfo"
+# oauth_jwks_uri                      = "https://YOUR_TENANT.auth0.com/.well-known/jwks.json"
+# oauth_device_authorization_endpoint = "https://YOUR_TENANT.auth0.com/oauth/device/code"
 
 # Optional scopes enforced by API Gateway when using JWT auth.
 jwt_authorization_scopes = []
