@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-03-15
+
+Release notes: `0.7.0` consolidates authentication on Auth0 (Okta) and removes all prior auth machinery. Claude GUI authenticates via browser OAuth + PKCE; Claude Code authenticates via the device authorization grant — both validated natively by the API Gateway JWT authorizer. AWS Cognito, IAM caller identity, dynamic client registration, and the legacy Docker workflow are removed, yielding a net reduction of ~860 lines. S3 memory infrastructure is unchanged.
+
 ### Added
 
 - **Auth0 (Okta) JWT support** - Replaced AWS Cognito with Auth0 as the identity provider; API Gateway JWT authorizer now validates Auth0 tokens natively
@@ -265,6 +269,7 @@ Release notes: `0.6.0` centers on authentication. This release introduces OAuth 
 - Balance entry guidance: recommend anchor, not too poetic, not too log-based
 - Enhance directory structure guidance and add state file examples
 
+[0.7.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.7.0
 [0.6.1]: https://github.com/rob-mosher/relational-state/releases/tag/v0.6.1
 [0.6.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.6.0
 [0.5.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.5.0
