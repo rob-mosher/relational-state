@@ -19,12 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DCR proxy** - Removed the dynamic client registration endpoint (`POST /oauth/register`) and its Cognito-backed implementation; Auth0 applications are configured in the Auth0 dashboard
 - **Cognito helper scripts** - Removed `mcp_cognito_token.sh`, `mcp_cognito_login.sh`, `mcp_cognito_refresh.sh`, and `mcp_cognito_codex_add.sh`
 - **Terraform moved blocks** - Cleaned up historical `append_memory` → `add_memory` rename artifacts
+- **Legacy Docker workflow** - Removed `legacy/` directory (preserved in the `legacy` branch); the project now runs entirely on the serverless infra stack
 
 ### Changed
 
 - **Auth mode simplified** - `api_authorization_type` now accepts only `JWT` or `NONE` (default `NONE` for dev); `AWS_IAM` removed
 - **Infra README rewrite** - Replaced Cognito/SigV4 documentation with Auth0 setup guide covering Claude.ai (browser OAuth + PKCE) and Claude Code (device flow)
-
 
 ## [0.6.1] - 2026-03-14
 
