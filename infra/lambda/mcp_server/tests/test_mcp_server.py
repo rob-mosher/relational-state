@@ -331,7 +331,7 @@ def test_oauth_protected_resource_route_from_raw_path() -> None:
     assert response["statusCode"] == 200
     body = json.loads(response["body"])
     assert body["resource"] == "https://mcp.example.com/"
-    assert body["authorization_servers"] == ["https://issuer.example.com"]
+    assert body["authorization_servers"] == ["https://mcp.example.com/"]
     assert body["scopes_supported"] == ["openid", "profile"]
 
 

@@ -19,7 +19,7 @@ SCHEMA_VERSION = 1
 MEMORY_BUCKET_ENV = "MEMORY_BUCKET_NAME"
 PROTOCOL_VERSION = "2025-11-25"
 SERVER_NAME = "relational-state-mcp"
-SERVER_VERSION = "0.7.0"
+SERVER_VERSION = "0.8.0"
 OAUTH_ISSUER_ENV = "OAUTH_ISSUER"
 OAUTH_AUTHORIZATION_ENDPOINT_ENV = "OAUTH_AUTHORIZATION_ENDPOINT"
 OAUTH_TOKEN_ENDPOINT_ENV = "OAUTH_TOKEN_ENDPOINT"
@@ -453,7 +453,7 @@ def _oauth_protected_resource() -> Dict[str, Any]:
 
     payload: Dict[str, Any] = {
         "resource": resource,
-        "authorization_servers": [issuer],
+        "authorization_servers": [resource],
     }
     if jwks_uri:
         payload["jwks_uri"] = jwks_uri

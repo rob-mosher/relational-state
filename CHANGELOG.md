@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Release notes : `0.8.0` adds a lightweight Dynamic Client Registration (DCR) shim so Claude.ai can discover the Auth0 client_id automatically during MCP OAuth flows. The endpoint is stateless and returns the pre-configured Auth0 SPA client_id for any RFC 7591 registration request.
+
 ### Added
 
 - **DCR shim endpoint** - `POST /oauth/register` returns the configured Auth0 SPA `client_id` for MCP clients that use Dynamic Client Registration (RFC 7591). Enabled by setting `dcr_client_id` in Terraform; disabled by default.
@@ -14,7 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **MCP server version** - Bumped to `0.8.0`
 - **`oauth_registration_endpoint` local** - Now auto-derives from `mcp_base_url` when `dcr_client_id` is set, removing the need to manually provide the registration URL
+
+### Fixed
+
+- **OAuth protected resource `authorization_servers`** - Changed to point to the MCP server URL (resource) instead of the OAuth issuer. Claude.ai follows RFC 9728 and fetches authorization server metadata from the URL listed in `authorization_servers`; pointing to the external issuer (Auth0) bypassed the local DCR shim and hit Auth0's disabled native DCR endpoint
 
 ## [0.7.0] - 2026-03-15
 
@@ -278,6 +285,7 @@ Release notes: `0.6.0` centers on authentication. This release introduces OAuth 
 - Balance entry guidance: recommend anchor, not too poetic, not too log-based
 - Enhance directory structure guidance and add state file examples
 
+[0.8.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.8.0
 [0.7.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.7.0
 [0.6.1]: https://github.com/rob-mosher/relational-state/releases/tag/v0.6.1
 [0.6.0]: https://github.com/rob-mosher/relational-state/releases/tag/v0.6.0
