@@ -18,9 +18,9 @@ locals {
     ? var.oauth_jwks_uri
     : "${local.oauth_issuer}/.well-known/jwks.json"
   )
-  oauth_authorization_endpoint        = var.oauth_authorization_endpoint
-  oauth_token_endpoint                = var.oauth_token_endpoint
-  oauth_userinfo_endpoint             = var.oauth_userinfo_endpoint
+  oauth_authorization_endpoint = var.oauth_authorization_endpoint
+  oauth_token_endpoint         = var.oauth_token_endpoint
+  oauth_userinfo_endpoint      = var.oauth_userinfo_endpoint
   oauth_registration_endpoint = (
     trimspace(var.oauth_registration_endpoint) != ""
     ? var.oauth_registration_endpoint
