@@ -29,6 +29,7 @@ OAUTH_REGISTRATION_ENDPOINT_ENV = "OAUTH_REGISTRATION_ENDPOINT"
 OAUTH_DEVICE_AUTHORIZATION_ENDPOINT_ENV = "OAUTH_DEVICE_AUTHORIZATION_ENDPOINT"
 OAUTH_RESOURCE_ENV = "OAUTH_RESOURCE"
 OAUTH_SCOPES_ENV = "OAUTH_SCOPES"
+DCR_CLIENT_ID_ENV = "DCR_CLIENT_ID"
 README_TEXT = (
     "Relational State is a memory space that honors relational continuity between "
     "entities (human, AI, or otherwise) centered around topics of knowledge. "
@@ -500,6 +501,45 @@ def _oauth_authorization_server() -> Dict[str, Any]:
     return payload
 
 
+def _handle_dcr(event: Mapping[str, Any]) -> Dict[str, Any]:
+    """RFC 7591 Dynamic Client Registration shim.
+
+    Returns the pre-configured Auth0 SPA client_id for any valid
+    registration request.  Stateless — every caller receives the same
+    public-client credentials because PKCE provides the security boundary.
+    """
+    client_id = os.getenv(DCR_CLIENT_ID_ENV, "").strip()
+    if not client_id:
+        return _response(404, {"error": "Dynamic client registration is not enabled."})
+
+    try:
+        body = _parse_event_body(event)
+    except RequestError as exc:
+        return _response(400, {"error": str(exc)})
+
+    redirect_uris = body.get("redirect_uris", [])
+    if isinstance(redirect_uris, str):
+        redirect_uris = [redirect_uris]
+
+    client_name = body.get("client_name")
+    if not isinstance(client_name, str) or not client_name.strip():
+        client_name = f"mcp-client-{uuid.uuid4().hex[:8]}"
+
+    scopes = _oauth_scopes()
+    issued_at = int(datetime.now(UTC).timestamp())
+
+    return _response(201, {
+        "client_id": client_id,
+        "client_name": client_name,
+        "redirect_uris": redirect_uris,
+        "token_endpoint_auth_method": "none",
+        "grant_types": ["authorization_code", "refresh_token"],
+        "response_types": ["code"],
+        "scope": " ".join(scopes) if scopes else "openid email profile",
+        "client_id_issued_at": issued_at,
+    })
+
+
 def _jsonrpc_error(req_id: Any, code: int, message: str) -> Dict[str, Any]:
     return {
         "jsonrpc": "2.0",
@@ -738,6 +778,8 @@ def handler(event: Mapping[str, Any], _context: Any) -> Dict[str, Any]:
             return _response(200, _oauth_authorization_server())
         except RequestError as exc:
             return _response(404, {"error": str(exc)})
+    if method == "POST" and path == "/oauth/register":
+        return _handle_dcr(event)
     try:
         decoded = _parse_event_body_any(event)
     except RequestError as exc:
@@ -802,4 +844,5 @@ __all__ = [
     "_validate_metadata",
     "_validate_non_empty_string",
     "_validate_path_component",
+    "_handle_dcr",
 ]

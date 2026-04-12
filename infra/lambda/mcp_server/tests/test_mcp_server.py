@@ -29,6 +29,7 @@ def clear_bucket_env() -> None:
     os.environ.pop(mcp_server.OAUTH_RESOURCE_ENV, None)
     os.environ.pop(mcp_server.OAUTH_SCOPES_ENV, None)
     os.environ.pop(mcp_server.OAUTH_DEVICE_AUTHORIZATION_ENDPOINT_ENV, None)
+    os.environ.pop(mcp_server.DCR_CLIENT_ID_ENV, None)
 
 
 def test_prepare_memory_record_builds_expected_shape() -> None:
@@ -356,3 +357,73 @@ def test_oauth_authorization_server_route_with_stage_prefixed_path() -> None:
     assert body["issuer"] == "https://issuer.example.com"
     assert body["authorization_endpoint"] == "https://issuer.example.com/oauth2/authorize"
     assert body["token_endpoint"] == "https://issuer.example.com/oauth2/token"
+
+
+def test_dcr_returns_client_id_when_configured() -> None:
+    os.environ[mcp_server.DCR_CLIENT_ID_ENV] = "test-client-id-abc123"
+    os.environ[mcp_server.OAUTH_SCOPES_ENV] = "openid email profile"
+
+    event = {
+        "rawPath": "/oauth/register",
+        "requestContext": {"http": {"method": "POST"}, "stage": "dev"},
+        "body": json.dumps({
+            "client_name": "Claude.ai",
+            "redirect_uris": ["https://claude.ai/api/mcp/auth_callback"],
+        }),
+    }
+
+    response = mcp_server.handler(event, None)
+    assert response["statusCode"] == 201
+    body = json.loads(response["body"])
+    assert body["client_id"] == "test-client-id-abc123"
+    assert body["client_name"] == "Claude.ai"
+    assert body["redirect_uris"] == ["https://claude.ai/api/mcp/auth_callback"]
+    assert body["token_endpoint_auth_method"] == "none"
+    assert body["grant_types"] == ["authorization_code", "refresh_token"]
+    assert body["response_types"] == ["code"]
+    assert body["scope"] == "openid email profile"
+    assert "client_id_issued_at" in body
+
+
+def test_dcr_returns_404_when_not_configured() -> None:
+    event = {
+        "rawPath": "/oauth/register",
+        "requestContext": {"http": {"method": "POST"}, "stage": "dev"},
+        "body": json.dumps({"client_name": "test"}),
+    }
+
+    response = mcp_server.handler(event, None)
+    assert response["statusCode"] == 404
+    body = json.loads(response["body"])
+    assert "not enabled" in body["error"]
+
+
+def test_dcr_generates_client_name_when_missing() -> None:
+    os.environ[mcp_server.DCR_CLIENT_ID_ENV] = "test-client-id"
+
+    event = {
+        "rawPath": "/oauth/register",
+        "requestContext": {"http": {"method": "POST"}, "stage": "dev"},
+        "body": json.dumps({"redirect_uris": ["https://example.com/callback"]}),
+    }
+
+    response = mcp_server.handler(event, None)
+    assert response["statusCode"] == 201
+    body = json.loads(response["body"])
+    assert body["client_name"].startswith("mcp-client-")
+
+
+def test_dcr_handles_empty_body() -> None:
+    os.environ[mcp_server.DCR_CLIENT_ID_ENV] = "test-client-id"
+
+    event = {
+        "rawPath": "/oauth/register",
+        "requestContext": {"http": {"method": "POST"}, "stage": "dev"},
+        "body": json.dumps({}),
+    }
+
+    response = mcp_server.handler(event, None)
+    assert response["statusCode"] == 201
+    body = json.loads(response["body"])
+    assert body["client_id"] == "test-client-id"
+    assert body["redirect_uris"] == []

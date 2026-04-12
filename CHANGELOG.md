@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **DCR shim endpoint** - `POST /oauth/register` returns the configured Auth0 SPA `client_id` for MCP clients that use Dynamic Client Registration (RFC 7591). Enabled by setting `dcr_client_id` in Terraform; disabled by default.
+- **`dcr_client_id` Terraform variable** - Controls the DCR endpoint. When set, the `registration_endpoint` is auto-derived and advertised in OAuth metadata. API Gateway route is conditionally created.
+
+### Changed
+
+- **`oauth_registration_endpoint` local** - Now auto-derives from `mcp_base_url` when `dcr_client_id` is set, removing the need to manually provide the registration URL
+
 ## [0.7.0] - 2026-03-15
 
 Release notes: `0.7.0` consolidates authentication on Auth0 (Okta) and removes all prior auth machinery. Claude GUI authenticates via browser OAuth + PKCE; Claude Code authenticates via the device authorization grant — both validated natively by the API Gateway JWT authorizer. AWS Cognito, IAM caller identity, dynamic client registration, and the legacy Docker workflow are removed, yielding a net reduction of ~860 lines. S3 memory infrastructure is unchanged.

@@ -21,7 +21,11 @@ locals {
   oauth_authorization_endpoint        = var.oauth_authorization_endpoint
   oauth_token_endpoint                = var.oauth_token_endpoint
   oauth_userinfo_endpoint             = var.oauth_userinfo_endpoint
-  oauth_registration_endpoint         = var.oauth_registration_endpoint
+  oauth_registration_endpoint = (
+    trimspace(var.oauth_registration_endpoint) != ""
+    ? var.oauth_registration_endpoint
+    : trimspace(var.dcr_client_id) != "" ? "${local.mcp_base_url}oauth/register" : ""
+  )
   oauth_device_authorization_endpoint = var.oauth_device_authorization_endpoint
   oauth_resource                      = trimspace(var.oauth_resource) != "" ? var.oauth_resource : local.mcp_base_url
   oauth_scopes                        = length(var.oauth_scopes) > 0 ? var.oauth_scopes : ["openid", "email", "profile"]
@@ -153,6 +157,7 @@ resource "aws_lambda_function" "add_memory" {
       OAUTH_TOKEN_ENDPOINT                = local.oauth_token_endpoint
       OAUTH_USERINFO_ENDPOINT             = local.oauth_userinfo_endpoint
       OAUTH_REGISTRATION_ENDPOINT         = local.oauth_registration_endpoint
+      DCR_CLIENT_ID                       = var.dcr_client_id
       OAUTH_DEVICE_AUTHORIZATION_ENDPOINT = local.oauth_device_authorization_endpoint
       OAUTH_RESOURCE                      = local.oauth_resource
       OAUTH_SCOPES                        = join(" ", local.oauth_scopes)
@@ -220,6 +225,16 @@ resource "aws_apigatewayv2_route" "oauth_protected_resource" {
 resource "aws_apigatewayv2_route" "oauth_authorization_server" {
   api_id    = aws_apigatewayv2_api.memory_ingress.id
   route_key = "GET /.well-known/oauth-authorization-server"
+  target    = "integrations/${aws_apigatewayv2_integration.add_memory.id}"
+
+  authorization_type = "NONE"
+}
+
+resource "aws_apigatewayv2_route" "oauth_register" {
+  count = trimspace(var.dcr_client_id) != "" ? 1 : 0
+
+  api_id    = aws_apigatewayv2_api.memory_ingress.id
+  route_key = "POST /oauth/register"
   target    = "integrations/${aws_apigatewayv2_integration.add_memory.id}"
 
   authorization_type = "NONE"

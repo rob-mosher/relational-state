@@ -46,6 +46,11 @@ api_authorization_type = "NONE"
 # oauth_jwks_uri                      = "https://YOUR_TENANT.auth0.com/.well-known/jwks.json"
 # oauth_device_authorization_endpoint = "https://YOUR_TENANT.auth0.com/oauth/device/code"
 
+# Dynamic Client Registration (DCR) shim.
+# Set this to your Auth0 SPA Application client_id to enable the DCR endpoint.
+# Claude.ai uses DCR to discover the client_id for OAuth flows.
+# dcr_client_id = "YOUR_AUTH0_SPA_CLIENT_ID"
+
 # Optional scopes enforced by API Gateway when using JWT auth.
 jwt_authorization_scopes = []
 

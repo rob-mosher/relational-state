@@ -110,6 +110,12 @@ variable "oauth_device_authorization_endpoint" {
   default     = ""
 }
 
+variable "dcr_client_id" {
+  description = "Auth0 SPA Application client_id returned by the DCR shim endpoint. Leave empty to disable dynamic client registration."
+  type        = string
+  default     = ""
+}
+
 variable "jwt_issuer" {
   description = "JWT issuer URL (required when api_authorization_type = JWT). Example: https://YOUR_TENANT.auth0.com/"
   type        = string

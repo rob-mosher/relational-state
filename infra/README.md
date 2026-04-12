@@ -132,6 +132,10 @@ oauth_token_endpoint                = "https://YOUR_TENANT.auth0.com/oauth/token
 oauth_userinfo_endpoint             = "https://YOUR_TENANT.auth0.com/userinfo"
 oauth_jwks_uri                      = "https://YOUR_TENANT.auth0.com/.well-known/jwks.json"
 oauth_device_authorization_endpoint = "https://YOUR_TENANT.auth0.com/oauth/device/code"
+
+# DCR shim — Claude.ai uses this to discover the client_id for OAuth.
+# Set to your Auth0 SPA Application client_id.
+dcr_client_id = "YOUR_AUTH0_SPA_CLIENT_ID"
 ```
 
 Apply:
@@ -196,6 +200,14 @@ This MCP server exposes:
 
 - `GET /.well-known/oauth-protected-resource`
 - `GET /.well-known/oauth-authorization-server`
+
+#### Dynamic Client Registration (DCR)
+
+When `dcr_client_id` is set, the server exposes a lightweight DCR shim at
+`POST /oauth/register` (RFC 7591). Claude.ai uses DCR to discover the
+`client_id` for the OAuth flow. The endpoint is stateless — it always
+returns the same pre-configured Auth0 SPA client_id. PKCE provides the
+security boundary, not the client_id.
 
 ### Via NONE (dev-only)
 
