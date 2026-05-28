@@ -142,7 +142,7 @@ resource "aws_lambda_function" "add_memory" {
   function_name = var.lambda_function_name
   role          = aws_iam_role.add_memory_lambda_role.arn
   handler       = "handler.handler"
-  runtime       = "python3.11"
+  runtime       = "python3.13"
   timeout       = 10
 
   filename         = data.archive_file.add_memory_zip.output_path
