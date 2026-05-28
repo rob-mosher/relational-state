@@ -16,6 +16,8 @@ Release notes : `0.8.0` adds a lightweight Dynamic Client Registration (DCR) shi
 
 ### Changed
 
+- **Python runtime** - Upgraded Lambda runtime from `python3.11` to `python3.13`; local `.python-version` bumped from `3.12` to `3.13`
+- **Terraform providers** - `hashicorp/aws` `6.28.0` → `6.47.0`; `hashicorp/archive` `2.7.1` → `2.8.0`
 - **MCP server version** - Bumped to `0.8.0`
 - **`oauth_registration_endpoint` local** - Now auto-derives from `mcp_base_url` when `dcr_client_id` is set, removing the need to manually provide the registration URL
 
