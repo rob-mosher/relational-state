@@ -27,7 +27,7 @@ relational continuity.
 
 This project exposes a minimal MCP write ingress backed by S3 (append-only memory storage). Retrieval with RLM context compilation is in active development. Access is intentionally open for development and learning. Encryption and policy enforcement are on the roadmap to ensure trust for entities who need that foundation.
 
-MCP tools available today: `add_memory`, `get_README`, `list_topics`, `list_entities_within_topic`.
+MCP tools available today: `add_memory`, `get_status`, `get_README`, `list_topics`, `list_entities_within_topic`.
 
 ## Vision
 

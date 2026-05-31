@@ -219,6 +219,7 @@ do not expose the endpoint publicly and do not use in production.
 The MCP server exposes four tools:
 
 - `add_memory`
+- `get_status`
 - `get_README`
 - `list_topics`
 - `list_entities_within_topic`
@@ -260,6 +261,18 @@ Notes:
 {
   "status": "error",
   "error": "human-readable message"
+}
+```
+
+### get_status
+
+Returns the system status. Useful as a keep-alive for bearer-tokens.
+
+### get_status: Success Response
+
+```json
+{
+  "status": "present"
 }
 ```
 

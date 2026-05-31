@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **get_status MCP tool** - Reports back system status, effectively the semantic equivalent of a `200/OK` API response.
+
 ### Changed
 
 - **Python runtime** - Upgraded Lambda runtime from `python3.11` to `python3.13`; local `.python-version` bumped from `3.12` to `3.13`

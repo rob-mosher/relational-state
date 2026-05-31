@@ -687,6 +687,8 @@ def _handle_mcp_request(payload: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
                 )
         if not isinstance(tool_args, dict):
             return _mcp_tool_error(req_id, "Tool arguments must be a JSON object.")
+        if tool_name == "get_status":
+            return _mcp_tool_result(req_id, {"status": "present"})
         if tool_name == "get_README":
             return _mcp_tool_result(req_id, {"readme": README_TEXT})
         if tool_name == "list_topics":
